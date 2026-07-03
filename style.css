@@ -99,6 +99,7 @@ h2 { margin: 0; }
 .message.hidden { display: none; }
 .message.win { border-color: rgba(117, 212, 155, 0.5); }
 .message.lose { border-color: rgba(239, 111, 108, 0.5); }
+.message.result { border-color: rgba(244, 195, 91, 0.42); color: var(--gold); font-weight: 800; }
 
 @media (min-width: 720px) {
   .app { padding: 28px 24px 44px; }

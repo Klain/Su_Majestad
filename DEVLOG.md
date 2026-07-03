@@ -61,3 +61,13 @@ Ejemplo actual: la crisis de la marca oriental funciona como una línea con vari
 ## Regla de evolución
 
 Cada cambio importante debe incrementar la versión, actualizar `CHANGELOG.md`, actualizar `DEVLOG.md` si cambia el diseño y actualizar `ARCHITECTURE.md` si cambia el motor.
+
+## v0.2.0: del cálculo exacto al riesgo cualitativo
+
+La prioridad de esta versión es atacar de forma directa el problema de optimización por suma. En versiones anteriores, cada botón podía revelar cambios como `+10 oro` o `-6 pueblo`, lo que empujaba al jugador a comparar opciones como una operación aritmética.
+
+Desde `v0.2.0`, las decisiones presentan intención y riesgo con lenguaje cualitativo: ingresos grandes, pérdidas moderadas, resultado incierto, posible recompensa o posible pérdida. Los números no desaparecen del motor; siguen existiendo para balancear recursos y derrotas, pero dejan de ser la información dominante en la elección.
+
+También aparece una nueva capa de incertidumbre inmediata. Una opción puede tener varios `outcomes` posibles con probabilidades internas. El jugador no ve el porcentaje exacto, solo señales narrativas de riesgo. Al elegir, el juego revela qué ocurrió realmente con un mensaje breve y lo registra en la memoria del reino.
+
+Este cambio refuerza la fantasía de gobernar bajo información incompleta: la corona decide por criterio político, intuición narrativa y consecuencias posibles, no por optimización perfecta de barras.

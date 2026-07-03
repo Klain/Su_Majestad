@@ -3,10 +3,11 @@ class EventManager {
     this.catalog = catalog;
     this.eventsById = new Map(catalog.map((item) => [item.id, item]));
     this.random = options.random || Math.random;
+    this.recentRepeatDays = options.recentRepeatDays || 8;
   }
 
   createInitialMemory() {
-    return { tags: [], history: [], pendingEvents: [], characters: {} };
+    return { tags: [], history: [], pendingEvents: [], characters: {}, issues: [] };
   }
 
   normalizeState(state) {
@@ -14,14 +15,34 @@ class EventManager {
     state.history = Array.isArray(state.history) ? state.history : [];
     state.pendingEvents = Array.isArray(state.pendingEvents) ? state.pendingEvents : [];
     state.characters = state.characters && typeof state.characters === "object" ? state.characters : {};
+    state.issues = Array.isArray(state.issues) ? state.issues.map((issue) => this.normalizeIssue(issue)).filter(Boolean) : [];
     return state;
+  }
+
+  normalizeIssue(issue) {
+    if (!issue || !issue.id) return null;
+    return {
+      id: issue.id,
+      actorId: issue.actorId || "realm",
+      type: issue.type || "generic",
+      stage: Math.max(0, Number(issue.stage || 0)),
+      tension: clamp(Number(issue.tension || 0)),
+      trust: clamp(Number(issue.trust ?? 50)),
+      tags: Array.isArray(issue.tags) ? issue.tags : [],
+      daysActive: Math.max(0, Number(issue.daysActive || 0)),
+      lastEventDay: Number(issue.lastEventDay || 0)
+    };
+  }
+
+  tickIssues(state) {
+    state.issues = (state.issues || []).map((issue) => ({ ...issue, daysActive: issue.daysActive + 1 }));
   }
 
   getAvailableEvents(state, limit = 2, excludeIds = []) {
     const excluded = new Set(excludeIds);
     const candidates = this.catalog.filter((item) => {
       if (item.kind === "consequence" || excluded.has(item.id)) return false;
-      return this.meetsRequirements(item, state);
+      return this.isCompatible(item, state);
     });
     return this.weightedSample(candidates, limit, state).map((item) => this.materializeEvent(item, state));
   }
@@ -44,7 +65,7 @@ class EventManager {
     const branch = pending.branches ? this.pickBranch(pending.branches) : null;
     const eventId = branch?.eventId || pending.eventId;
     const event = this.eventsById.get(eventId);
-    if (!event || !this.meetsRequirements(event, state)) return null;
+    if (!event || !this.isCompatible(event, state)) return null;
     return event;
   }
 
@@ -53,6 +74,7 @@ class EventManager {
     this.applyEffects(state, immediate);
     this.addTags(state, choice.addTags || []);
     this.rememberCharacters(state, choice.characters || []);
+    this.applyIssueActions(state, choice.issues || [], eventItem);
     this.scheduleDeferred(state, choice.defer || [], eventItem.id);
     this.recordHistory(state, eventItem, choice);
   }
@@ -62,6 +84,57 @@ class EventManager {
       if (state.resources[key] === undefined) return;
       state.resources[key] = clamp(state.resources[key] + value);
     });
+  }
+
+  applyIssueActions(state, actions, eventItem) {
+    actions.forEach((action) => {
+      if (action.action === "create") return this.createIssue(state, action.issue, eventItem);
+      const issue = this.findIssue(state, action.issueId, action);
+      if (!issue) return;
+      if (action.action === "modify") this.modifyIssue(issue, action);
+      if (action.action === "escalate") this.escalateIssue(issue, action);
+      if (action.action === "resolve") this.resolveIssue(state, issue.id, action.addTags || []);
+      if (action.touch !== false && action.action !== "resolve") issue.lastEventDay = state.day;
+    });
+  }
+
+  createIssue(state, issueConfig = {}, eventItem) {
+    const id = issueConfig.id || `${issueConfig.type || eventItem.family || "issue"}-${issueConfig.actorId || "realm"}`;
+    if (state.issues.some((issue) => issue.id === id)) return;
+    state.issues.push(this.normalizeIssue({
+      id,
+      actorId: issueConfig.actorId || "realm",
+      type: issueConfig.type || eventItem.family || "generic",
+      stage: issueConfig.stage || 0,
+      tension: issueConfig.tension ?? 35,
+      trust: issueConfig.trust ?? 50,
+      tags: issueConfig.tags || eventItem.issueTags || [],
+      daysActive: 0,
+      lastEventDay: state.day
+    }));
+  }
+
+  findIssue(state, issueId, action = {}) {
+    if (issueId) return state.issues.find((issue) => issue.id === issueId);
+    return state.issues.find((issue) => (!action.type || issue.type === action.type) && (!action.actorId || issue.actorId === action.actorId));
+  }
+
+  modifyIssue(issue, action) {
+    issue.tension = clamp(issue.tension + (action.tension || 0));
+    issue.trust = clamp(issue.trust + (action.trust || 0));
+    if (Array.isArray(action.addTags)) issue.tags = [...new Set([...issue.tags, ...action.addTags])];
+    if (Array.isArray(action.removeTags)) issue.tags = issue.tags.filter((tag) => !action.removeTags.includes(tag));
+  }
+
+  escalateIssue(issue, action) {
+    this.modifyIssue(issue, action);
+    issue.stage = Math.min(action.maxStage || 2, issue.stage + (action.stage || 1));
+    issue.tension = clamp(issue.tension + (action.extraTension ?? 12));
+  }
+
+  resolveIssue(state, issueId, tags = []) {
+    state.issues = state.issues.filter((issue) => issue.id !== issueId);
+    this.addTags(state, tags);
   }
 
   scheduleDeferred(state, deferredItems, sourceEventId) {
@@ -77,13 +150,7 @@ class EventManager {
   }
 
   recordHistory(state, eventItem, choice) {
-    state.history.push({
-      day: state.day,
-      eventId: eventItem.id,
-      eventTitle: eventItem.title,
-      choice: choice.label,
-      tags: choice.addTags || []
-    });
+    state.history.push({ day: state.day, eventId: eventItem.id, eventTitle: eventItem.title, family: eventItem.family || null, choice: choice.label, tags: choice.addTags || [] });
   }
 
   addTags(state, tags) {
@@ -99,6 +166,13 @@ class EventManager {
     });
   }
 
+  isCompatible(eventItem, state) {
+    if (!this.meetsRequirements(eventItem, state)) return false;
+    if (eventItem.issue) return this.hasMatchingIssue(eventItem.issue, state);
+    if (eventItem.incompatibleIssueTypes?.some((type) => state.issues.some((issue) => issue.type === type))) return false;
+    return true;
+  }
+
   meetsRequirements(eventItem, state) {
     const tags = new Set(state.tags || []);
     const required = eventItem.requiresTags || [];
@@ -108,14 +182,23 @@ class EventManager {
     return state.day >= minDay && state.day <= maxDay && required.every((tag) => tags.has(tag)) && forbidden.every((tag) => !tags.has(tag));
   }
 
+  hasMatchingIssue(rule, state) {
+    return state.issues.some((issue) => {
+      if (rule.id && issue.id !== rule.id) return false;
+      if (rule.type && issue.type !== rule.type) return false;
+      if (rule.actorId && issue.actorId !== rule.actorId) return false;
+      if (rule.minStage !== undefined && issue.stage < rule.minStage) return false;
+      if (rule.maxStage !== undefined && issue.stage > rule.maxStage) return false;
+      if (rule.minTension !== undefined && issue.tension < rule.minTension) return false;
+      if (rule.maxTension !== undefined && issue.tension > rule.maxTension) return false;
+      if (rule.tags && !rule.tags.every((tag) => issue.tags.includes(tag))) return false;
+      return true;
+    });
+  }
+
   materializeEvent(eventItem, state) {
     const context = { characters: state.characters || {} };
-    return {
-      ...eventItem,
-      title: this.interpolate(eventItem.title, context),
-      text: this.interpolate(eventItem.text, context),
-      options: eventItem.options.map((option) => ({ ...option, label: this.interpolate(option.label, context) }))
-    };
+    return { ...eventItem, title: this.interpolate(eventItem.title, context), text: this.interpolate(eventItem.text, context), options: eventItem.options.map((option) => ({ ...option, label: this.interpolate(option.label, context) })) };
   }
 
   interpolate(text, context) {
@@ -125,10 +208,7 @@ class EventManager {
   pickBranch(branches) {
     const roll = this.random();
     let cursor = 0;
-    for (const branch of branches) {
-      cursor += branch.probability;
-      if (roll <= cursor) return branch;
-    }
+    for (const branch of branches) { cursor += branch.probability; if (roll <= cursor) return branch; }
     return branches[branches.length - 1];
   }
 
@@ -136,12 +216,11 @@ class EventManager {
     const pool = [...items];
     const selected = [];
     while (pool.length && selected.length < limit) {
-      const total = pool.reduce((sum, item) => sum + this.weightFor(item, state), 0);
+      const weights = pool.map((item) => this.weightFor(item, state));
+      const total = weights.reduce((sum, weight) => sum + weight, 0);
+      if (total <= 0) break;
       let roll = this.random() * total;
-      const index = pool.findIndex((item) => {
-        roll -= this.weightFor(item, state);
-        return roll <= 0;
-      });
+      const index = weights.findIndex((weight) => { roll -= weight; return roll <= 0; });
       selected.push(pool.splice(index < 0 ? 0 : index, 1)[0]);
     }
     return selected;
@@ -150,6 +229,24 @@ class EventManager {
   weightFor(item, state) {
     const tags = new Set(state.tags || []);
     const affinity = (item.affinityTags || []).filter((tag) => tags.has(tag)).length;
-    return (item.weight || 1) + affinity * 2;
+    const issueBonus = this.issueWeightBonus(item, state);
+    const recencyPenalty = this.recentPenalty(item, state);
+    return Math.max(0.05, ((item.weight || 1) + affinity * 2 + issueBonus) * recencyPenalty);
+  }
+
+  issueWeightBonus(item, state) {
+    if (!state.issues?.length) return 0;
+    const familyBonus = state.issues.filter((issue) => item.families?.includes(issue.type) || item.family === issue.type).length * 2;
+    const directBonus = item.issue && this.hasMatchingIssue(item.issue, state) ? 5 : 0;
+    return familyBonus + directBonus;
+  }
+
+  recentPenalty(item, state) {
+    const recent = [...(state.history || [])].reverse().find((entry) => entry.eventId === item.id || (item.family && entry.family === item.family));
+    if (!recent) return 1;
+    const age = state.day - recent.day;
+    if (age <= 2) return 0.2;
+    if (age <= this.recentRepeatDays) return 0.5;
+    return 1;
   }
 }

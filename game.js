@@ -59,6 +59,7 @@ function endDay() {
     state.gameOver = true;
     state.outcome = "win";
   } else {
+    eventManager.tickIssues(state);
     state.todaysEvents = drawEventsForToday();
     state.resolved = [];
   }
@@ -95,6 +96,7 @@ function render() {
   renderResources();
   renderEvents();
   renderMemory();
+  renderIssues();
   renderMessage();
   document.getElementById("endDayButton").disabled = state.gameOver || state.resolved.length < EVENTS_PER_DAY;
 }
@@ -117,6 +119,27 @@ function renderEvents() {
   document.querySelectorAll(".option-button").forEach((button) => {
     button.addEventListener("click", () => applyChoice(Number(button.dataset.event), Number(button.dataset.option)));
   });
+}
+
+function renderIssues() {
+  const panel = document.getElementById("issues");
+  if (!panel) return;
+  const issues = state.issues || [];
+  panel.innerHTML = `
+    <h2>Issues activos</h2>
+    ${issues.length ? issues.map((issue) => `
+      <article class="issue-row">
+        <strong>${formatIssueType(issue.type)}</strong>
+        <span>Actor: ${issue.actorId} · Etapa ${issue.stage} · ${issue.daysActive} días</span>
+        <span>Tensión ${issue.tension} · Confianza ${issue.trust}</span>
+        <small>${issue.tags.join(", ") || "sin etiquetas"}</small>
+      </article>
+    `).join("") : "<p>No hay conflictos abiertos. Por ahora.</p>"}
+  `;
+}
+
+function formatIssueType(type) {
+  return ({ border: "Crisis fronteriza", noble_claim: "Reclamación noble", generic: "Asunto del reino" })[type] || type.replaceAll("_", " ");
 }
 
 function renderMemory() {
@@ -154,6 +177,7 @@ function formatStoryHooks(option) {
   const hooks = [];
   if (option.addTags?.length) hooks.push("el reino recordará esto");
   if (option.defer?.length) hooks.push("puede volver más adelante");
+  if (option.issues?.length) hooks.push("afecta un issue activo");
   return hooks.length ? ` · ${hooks.join(" · ")}` : "";
 }
 

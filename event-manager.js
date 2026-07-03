@@ -1,0 +1,155 @@
+class EventManager {
+  constructor(catalog, options = {}) {
+    this.catalog = catalog;
+    this.eventsById = new Map(catalog.map((item) => [item.id, item]));
+    this.random = options.random || Math.random;
+  }
+
+  createInitialMemory() {
+    return { tags: [], history: [], pendingEvents: [], characters: {} };
+  }
+
+  normalizeState(state) {
+    state.tags = Array.isArray(state.tags) ? state.tags : [];
+    state.history = Array.isArray(state.history) ? state.history : [];
+    state.pendingEvents = Array.isArray(state.pendingEvents) ? state.pendingEvents : [];
+    state.characters = state.characters && typeof state.characters === "object" ? state.characters : {};
+    return state;
+  }
+
+  getAvailableEvents(state, limit = 2, excludeIds = []) {
+    const excluded = new Set(excludeIds);
+    const candidates = this.catalog.filter((item) => {
+      if (item.kind === "consequence" || excluded.has(item.id)) return false;
+      return this.meetsRequirements(item, state);
+    });
+    return this.weightedSample(candidates, limit, state).map((item) => this.materializeEvent(item, state));
+  }
+
+  dueEventsForDay(state, day) {
+    const due = [];
+    const waiting = [];
+    state.pendingEvents.forEach((pending) => {
+      if (pending.day <= day) due.push(pending);
+      else waiting.push(pending);
+    });
+    state.pendingEvents = waiting;
+    return due
+      .map((pending) => this.resolvePendingEvent(pending, state))
+      .filter(Boolean)
+      .map((item) => this.materializeEvent(item, state));
+  }
+
+  resolvePendingEvent(pending, state) {
+    const branch = pending.branches ? this.pickBranch(pending.branches) : null;
+    const eventId = branch?.eventId || pending.eventId;
+    const event = this.eventsById.get(eventId);
+    if (!event || !this.meetsRequirements(event, state)) return null;
+    return event;
+  }
+
+  applyChoice(state, eventItem, choice) {
+    const immediate = choice.immediate || choice.effects || {};
+    this.applyEffects(state, immediate);
+    this.addTags(state, choice.addTags || []);
+    this.rememberCharacters(state, choice.characters || []);
+    this.scheduleDeferred(state, choice.defer || [], eventItem.id);
+    this.recordHistory(state, eventItem, choice);
+  }
+
+  applyEffects(state, effects) {
+    Object.entries(effects).forEach(([key, value]) => {
+      if (state.resources[key] === undefined) return;
+      state.resources[key] = clamp(state.resources[key] + value);
+    });
+  }
+
+  scheduleDeferred(state, deferredItems, sourceEventId) {
+    deferredItems.forEach((item) => {
+      state.pendingEvents.push({
+        id: `${sourceEventId}-${state.day}-${state.pendingEvents.length}-${Math.floor(this.random() * 100000)}`,
+        sourceEventId,
+        day: state.day + item.delay,
+        eventId: item.eventId,
+        branches: item.branches || null
+      });
+    });
+  }
+
+  recordHistory(state, eventItem, choice) {
+    state.history.push({
+      day: state.day,
+      eventId: eventItem.id,
+      eventTitle: eventItem.title,
+      choice: choice.label,
+      tags: choice.addTags || []
+    });
+  }
+
+  addTags(state, tags) {
+    const known = new Set(state.tags);
+    tags.forEach((tag) => known.add(tag));
+    state.tags = [...known];
+  }
+
+  rememberCharacters(state, characters) {
+    characters.forEach((character) => {
+      const current = state.characters[character.id] || {};
+      state.characters[character.id] = { ...current, ...character, appearances: (current.appearances || 0) + 1 };
+    });
+  }
+
+  meetsRequirements(eventItem, state) {
+    const tags = new Set(state.tags || []);
+    const required = eventItem.requiresTags || [];
+    const forbidden = eventItem.forbiddenTags || [];
+    const minDay = eventItem.minDay || 1;
+    const maxDay = eventItem.maxDay || Infinity;
+    return state.day >= minDay && state.day <= maxDay && required.every((tag) => tags.has(tag)) && forbidden.every((tag) => !tags.has(tag));
+  }
+
+  materializeEvent(eventItem, state) {
+    const context = { characters: state.characters || {} };
+    return {
+      ...eventItem,
+      title: this.interpolate(eventItem.title, context),
+      text: this.interpolate(eventItem.text, context),
+      options: eventItem.options.map((option) => ({ ...option, label: this.interpolate(option.label, context) }))
+    };
+  }
+
+  interpolate(text, context) {
+    return String(text).replace(/\{character:([^}.]+)\.([^}]+)}/g, (_, id, field) => context.characters[id]?.[field] || "alguien conocido");
+  }
+
+  pickBranch(branches) {
+    const roll = this.random();
+    let cursor = 0;
+    for (const branch of branches) {
+      cursor += branch.probability;
+      if (roll <= cursor) return branch;
+    }
+    return branches[branches.length - 1];
+  }
+
+  weightedSample(items, limit, state) {
+    const pool = [...items];
+    const selected = [];
+    while (pool.length && selected.length < limit) {
+      const total = pool.reduce((sum, item) => sum + this.weightFor(item, state), 0);
+      let roll = this.random() * total;
+      const index = pool.findIndex((item) => {
+        roll -= this.weightFor(item, state);
+        return roll <= 0;
+      });
+      selected.push(pool.splice(index < 0 ? 0 : index, 1)[0]);
+    }
+    return selected;
+  }
+
+  weightFor(item, state) {
+    const tags = new Set(state.tags || []);
+    const affinity = (item.affinityTags || []).filter((tag) => tags.has(tag)).length;
+    return (item.weight || 1) + affinity * 2;
+  }
+}

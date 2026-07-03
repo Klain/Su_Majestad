@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#17111f">
+  <title>Su Majestad - Roguelike de Reino</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app" aria-live="polite">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Roguelike de gestión</p>
+        <h1>Su Majestad</h1>
+      </div>
+      <button id="newGameButton" class="secondary-button" type="button">Nueva partida</button>
+    </header>
+
+    <section class="status-card">
+      <div class="day-panel">
+        <span>Día</span>
+        <strong id="dayNumber">1</strong>
+        <small>de 30</small>
+      </div>
+      <div class="progress-shell" aria-label="Progreso de la campaña">
+        <div id="dayProgress" class="progress-bar"></div>
+      </div>
+    </section>
+
+    <section id="resources" class="resources-grid" aria-label="Recursos del reino"></section>
+
+    <section id="message" class="message hidden"></section>
+
+    <section class="events-header">
+      <h2>Consejo del día</h2>
+      <p>Resuelve los 2 asuntos antes de cerrar la jornada.</p>
+    </section>
+
+    <section id="events" class="events-list"></section>
+
+    <section class="actions">
+      <button id="endDayButton" class="primary-button" type="button" disabled>Terminar día</button>
+    </section>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>

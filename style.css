@@ -213,7 +213,7 @@ h2 { margin: 0; }
 
 .compact-details summary::after {
   color: var(--muted);
-  content: "Toca para ver detalle";
+  content: "Toca para ver detalles";
   font-size: 0.74rem;
   font-weight: 700;
   opacity: 0.72;

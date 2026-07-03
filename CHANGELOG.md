@@ -2,6 +2,12 @@
 
 Todas las versiones del proyecto deben usar formato semver y actualizar este archivo cuando haya cambios importantes.
 
+## v0.2.3 - 2026-07-03
+
+### Cambios realizados
+- UI: traducción de tags e IDs internos a lenguaje narrativo.
+- UI: memoria e issues más inmersivos.
+
 ## v0.2.2 - 2026-07-03
 
 ### Cambios realizados

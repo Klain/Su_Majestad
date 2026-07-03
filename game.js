@@ -1,4 +1,4 @@
-const GAME_VERSION = "v0.2.3";
+const GAME_VERSION = "v0.3.0";
 const DEBUG_UI = false;
 const STORAGE_KEY = "su-majestad-save-v2";
 const LEGACY_STORAGE_KEY = "su-majestad-save-v1";
@@ -15,19 +15,65 @@ const resourceMeta = {
   threat: ["Amenaza", "🔥"]
 };
 
+
+const ambitions = [
+  { id: "merchant", name: "Rey mercader", description: "Acaba con oro alto y comercio favorecido." },
+  { id: "pious", name: "Rey piadoso", description: "Acaba con fe alta y sin agravios graves a la iglesia." },
+  { id: "people", name: "Rey del pueblo", description: "Acaba con pueblo alto y pocas decisiones crueles." },
+  { id: "iron", name: "Rey de hierro", description: "Acaba con ejército alto y amenaza baja." },
+  { id: "diplomat", name: "Rey diplomático", description: "Resuelve al menos 2 issues sin escalar demasiado el reino." },
+  { id: "noble", name: "Rey noble", description: "Mantén nobleza alta y evita insultos a casas nobles." }
+];
+
+const rulerTraits = [
+  { id: "generous", name: "Generoso", effects: { people: 8, gold: -8 } },
+  { id: "military", name: "Militar", effects: { army: 8, faith: -6 } },
+  { id: "devout", name: "Devoto", effects: { faith: 8, gold: -6 } },
+  { id: "ambitious", name: "Ambicioso", effects: { nobility: 8, threat: 6 } },
+  { id: "prudent", name: "Prudente", effects: { food: 8, people: -6 } },
+  { id: "mercantile", name: "Mercantil", effects: { gold: 8, nobility: -6 } }
+];
+
+const crises = [
+  { id: "drought", name: "Sequía", description: "La comida se agota más rápido.", duration: 4, families: ["food", "shortage", "people"], daily: { food: -2 } },
+  { id: "war_rumors", name: "Rumores de guerra", description: "La frontera pesa más en el consejo.", duration: 4, families: ["border", "army", "diplomacy"], daily: { threat: 2 } },
+  { id: "royal_fair", name: "Feria real", description: "El comercio domina la corte.", duration: 4, families: ["commerce", "people"], daily: { gold: 2 } },
+  { id: "banditry", name: "Bandolerismo", description: "El crimen gana presencia.", duration: 4, families: ["crime", "public_order"], daily: { threat: 1, gold: -1 } },
+  { id: "schism", name: "Cisma religioso", description: "La iglesia exige respuestas.", duration: 4, families: ["church", "nobility"], daily: { faith: -1 } },
+  { id: "court_intrigue", name: "Intriga cortesana", description: "Las casas nobles mueven sus piezas.", duration: 4, families: ["nobility", "royal_family"], daily: { nobility: -1 } }
+];
+
+const edicts = [
+  { id: "granaries", name: "Graneros reales", description: "Protege comida; a veces cuesta oro.", daily: { food: 1 }, every: 3, cost: { gold: -2 } },
+  { id: "road_patrols", name: "Patrullas de caminos", description: "Reduce amenaza; desgasta al ejército.", daily: { threat: -1 }, every: 3, cost: { army: -1 } },
+  { id: "market_tax", name: "Impuesto de mercado", description: "Mejora ingresos; deja malestar comercial.", daily: { gold: 1 }, tags: ["market_tax_edict"] },
+  { id: "minor_pardon", name: "Indulto menor", description: "Calma el crimen; molesta a la nobleza.", daily: { threat: -1 }, every: 2, cost: { nobility: -1 } },
+  { id: "strong_tithe", name: "Diezmo reforzado", description: "Sube la fe; baja el favor popular.", daily: { faith: 1 }, every: 2, cost: { people: -1 } },
+  { id: "local_levy", name: "Leva local", description: "Refuerza ejército; cansa al pueblo.", daily: { army: 1 }, every: 2, cost: { people: -1 } }
+];
+
 const startingResources = { gold: 55, food: 55, army: 45, people: 55, nobility: 50, faith: 50, threat: 20 };
 const eventManager = new EventManager(events, { actors, families });
 let state;
 
 function newGame() {
+  const trait = pickRandom(rulerTraits);
+  const resources = { ...startingResources };
+  applyResourceDelta(resources, trait.effects);
   state = eventManager.normalizeState({
     day: 1,
-    resources: { ...startingResources },
+    resources,
     todaysEvents: [],
     resolved: [],
     gameOver: false,
     outcome: null,
     lastResult: null,
+    ambition: pickRandom(ambitions),
+    rulerTrait: trait,
+    activeCrisis: null,
+    activeEdicts: [],
+    edictChoices: [],
+    completedObjectives: { issuesResolved: 0 },
     ...eventManager.createInitialMemory()
   });
   state.todaysEvents = drawEventsForToday();
@@ -43,6 +89,9 @@ function drawEventsForToday() {
 }
 
 function clamp(value) { return Math.max(0, Math.min(100, value)); }
+function pickRandom(items) { return items[Math.floor(Math.random() * items.length)]; }
+function pickMany(items, amount) { return [...items].sort(() => Math.random() - 0.5).slice(0, amount); }
+function applyResourceDelta(resources, effects = {}) { Object.entries(effects).forEach(([key, value]) => { if (resources[key] !== undefined) resources[key] = clamp(resources[key] + value); }); }
 
 function applyChoice(eventIndex, optionIndex) {
   if (state.gameOver || state.resolved.includes(eventIndex)) return;
@@ -57,11 +106,16 @@ function applyChoice(eventIndex, optionIndex) {
 
 function endDay() {
   if (state.resolved.length < EVENTS_PER_DAY || state.gameOver) return;
+  applyDailyRoguelikeSystems();
+  if (state.gameOver) { save(); render(); return; }
   state.day += 1;
   if (state.day > MAX_DAYS) {
     state.gameOver = true;
     state.outcome = "win";
+    state.epilogue = buildEpilogue();
   } else {
+    prepareSeasonalCrisis();
+    prepareEdictOffer();
     state.lastResult = null;
     eventManager.tickIssues(state);
     state.todaysEvents = drawEventsForToday();
@@ -85,7 +139,7 @@ function load() {
   const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
   if (!saved) return newGame();
   try {
-    state = eventManager.normalizeState(JSON.parse(saved));
+    state = normalizeRoguelikeState(eventManager.normalizeState(JSON.parse(saved)));
     state.todaysEvents = Array.isArray(state.todaysEvents) && state.todaysEvents.length ? state.todaysEvents : drawEventsForToday();
   } catch {
     return newGame();
@@ -99,11 +153,23 @@ function render() {
   document.getElementById("dayNumber").textContent = Math.min(state.day, MAX_DAYS);
   document.getElementById("dayProgress").style.width = `${(Math.min(state.day, MAX_DAYS) / MAX_DAYS) * 100}%`;
   renderResources();
+  renderReign();
   renderEvents();
   renderMemory();
   renderIssues();
+  renderEdictOffer();
   renderMessage();
   document.getElementById("endDayButton").disabled = state.gameOver || state.resolved.length < EVENTS_PER_DAY;
+}
+
+function normalizeRoguelikeState(saved) {
+  saved.ambition = ambitions.find((item) => item.id === saved.ambition?.id) || saved.ambition || pickRandom(ambitions);
+  saved.rulerTrait = rulerTraits.find((item) => item.id === saved.rulerTrait?.id) || saved.rulerTrait || pickRandom(rulerTraits);
+  saved.activeCrisis = saved.activeCrisis?.id ? { ...crises.find((item) => item.id === saved.activeCrisis.id), ...saved.activeCrisis } : null;
+  saved.activeEdicts = Array.isArray(saved.activeEdicts) ? saved.activeEdicts.map((edict) => ({ ...edicts.find((item) => item.id === edict.id), ...edict })).filter((edict) => edict.id) : [];
+  saved.edictChoices = Array.isArray(saved.edictChoices) ? saved.edictChoices : [];
+  saved.completedObjectives = { issuesResolved: 0, ...(saved.completedObjectives || {}) };
+  return saved;
 }
 
 function renderResources() {
@@ -124,6 +190,56 @@ function renderEvents() {
   document.querySelectorAll(".option-button").forEach((button) => {
     button.addEventListener("click", () => applyChoice(Number(button.dataset.event), Number(button.dataset.option)));
   });
+}
+
+function renderReign() {
+  const panel = document.getElementById("reign");
+  if (!panel) return;
+  const crisis = state.activeCrisis?.remainingDays > 0 ? `${state.activeCrisis.name} (${state.activeCrisis.remainingDays}d)` : "Sin crisis";
+  const edict = state.activeEdicts?.length ? state.activeEdicts.map((item) => item.name).join(" · ") : "Sin edicto";
+  panel.innerHTML = `<div class="reign-grid"><span><strong>Rasgo</strong>${state.rulerTrait.name}</span><span><strong>Ambición</strong>${state.ambition.name}</span><span><strong>Crisis</strong>${crisis}</span><span><strong>Edicto</strong>${edict}</span></div>`;
+}
+
+function renderEdictOffer() {
+  const panel = document.getElementById("edictOffer");
+  if (!panel) return;
+  if (!state.edictChoices?.length || state.gameOver) { panel.className = "edict-offer hidden"; panel.innerHTML = ""; return; }
+  panel.className = "edict-offer";
+  panel.innerHTML = `<strong>Nuevo edicto real</strong><p>Elige una política pasiva para los próximos días.</p><div class="edict-options">${state.edictChoices.map((edict, index) => `<button class="edict-button" data-edict="${index}"><span>${edict.name}</span><small>${edict.description}</small></button>`).join("")}</div>`;
+  document.querySelectorAll(".edict-button").forEach((button) => button.addEventListener("click", () => chooseEdict(Number(button.dataset.edict))));
+}
+
+function chooseEdict(index) {
+  const edict = state.edictChoices[index];
+  if (!edict) return;
+  state.activeEdicts = [{ ...edict, chosenDay: state.day }];
+  if (edict.tags?.length) eventManager.addTags(state, edict.tags);
+  state.edictChoices = [];
+  save();
+  render();
+}
+
+function prepareSeasonalCrisis() {
+  if (state.activeCrisis?.remainingDays > 0) return;
+  if (state.day === 1 || (state.day - 1) % 7 !== 0) return;
+  const crisis = pickRandom(crises);
+  state.activeCrisis = { ...crisis, remainingDays: crisis.duration };
+}
+
+function prepareEdictOffer() {
+  if (state.day > 1 && (state.day - 1) % 5 === 0) state.edictChoices = pickMany(edicts, 3);
+}
+
+function applyDailyRoguelikeSystems() {
+  if (state.activeCrisis?.remainingDays > 0) {
+    applyResourceDelta(state.resources, state.activeCrisis.daily);
+    state.activeCrisis.remainingDays -= 1;
+  }
+  (state.activeEdicts || []).forEach((edict) => {
+    applyResourceDelta(state.resources, edict.daily);
+    if (edict.every && state.day % edict.every === 0) applyResourceDelta(state.resources, edict.cost);
+  });
+  checkOutcome();
 }
 
 function renderIssues() {
@@ -279,9 +395,36 @@ function renderMessage() {
     return;
   }
   box.className = `message ${state.outcome}`;
-  box.innerHTML = state.outcome === "win"
-    ? "<strong>Victoria.</strong> Tu dinastía sobrevive los 30 días. El reino canta tu nombre."
-    : "<strong>Derrota.</strong> El reino cae por hambre, bancarrota, rebelión, cisma o invasión.";
+  const epilogue = state.epilogue || buildEpilogue();
+  box.innerHTML = `<strong>${state.outcome === "win" ? "Victoria" : "Derrota"}: ${epilogue.title}.</strong> ${epilogue.text}`;
+}
+
+function buildEpilogue() {
+  const ambitionWon = isAmbitionComplete();
+  const r = state.resources;
+  let title = ambitionWon ? "El Pacificador" : "El Último de su Casa";
+  if (state.ambition.id === "merchant" && ambitionWon) title = "El Rey de los Mercaderes";
+  else if (state.ambition.id === "pious" && ambitionWon) title = "El Santo de los Pobres";
+  else if ((state.tags || []).some((tag) => /cruel|execut|hang|burn|blood|sang/.test(tag))) title = "El Sangriento";
+  else if (r.gold <= 15) title = "El Rey Endeudado";
+  else if (r.threat <= 25 && (state.completedObjectives?.issuesResolved || 0) >= 2) title = "El Justo";
+  else if (r.army >= 70 && r.people < 40) title = "El Tirano Necesario";
+  const text = `${ambitionWon ? "La ambición de " + state.ambition.name + " se cumplió" : "La ambición de " + state.ambition.name + " quedó incompleta"}. Recursos finales: oro ${r.gold}, comida ${r.food}, ejército ${r.army}, pueblo ${r.people}, nobleza ${r.nobility}, fe ${r.faith}, amenaza ${r.threat}. Issues resueltos: ${state.completedObjectives?.issuesResolved || 0}; activos: ${(state.issues || []).length}.`;
+  return { title, text, ambitionWon };
+}
+
+function isAmbitionComplete() {
+  const r = state.resources;
+  const histories = state.history || [];
+  const tags = state.tags || [];
+  const familyCount = (family) => histories.filter((entry) => entry.family === family).length;
+  if (state.ambition.id === "merchant") return r.gold >= 70 && familyCount("commerce") >= 3;
+  if (state.ambition.id === "pious") return r.faith >= 70 && !tags.some((tag) => /church|monastery|tithe/.test(tag) && /mocked|rejected|stolen|burned|insult/.test(tag));
+  if (state.ambition.id === "people") return r.people >= 70 && tags.filter((tag) => /cruel|abandoned|executed|ignored/.test(tag)).length <= 1;
+  if (state.ambition.id === "iron") return r.army >= 70 && r.threat <= 30;
+  if (state.ambition.id === "diplomat") return (state.completedObjectives?.issuesResolved || 0) >= 2 && (state.issues || []).filter((issue) => issue.stage >= 2).length <= 1;
+  if (state.ambition.id === "noble") return r.nobility >= 70 && !tags.some((tag) => /insult|baron_lands_taken|mocked/.test(tag));
+  return false;
 }
 
 function formatChoicePreview(option) {

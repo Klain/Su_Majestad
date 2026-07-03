@@ -2,6 +2,20 @@
 
 Todas las versiones del proyecto deben usar formato semver y actualizar este archivo cuando haya cambios importantes.
 
+## v0.3.0 - 2026-07-03
+
+### Cambios realizados
+- Se añaden rasgos iniciales aleatorios del monarca con ajustes pequeños de recursos.
+- Se añaden ambiciones de reinado como objetivos secundarios de partida.
+- Se incorporan crisis de temporada cada 7 días con efecto diario y ponderación de familias de eventos.
+- Se añaden edictos cada 5 días como modificadores pasivos simples elegidos entre 3 opciones.
+- Se muestra una tarjeta compacta de Reinado con rasgo, ambición, crisis activa y edicto activo.
+- Se añade epílogo narrativo final según ambición, recursos, tags, issues y amenaza.
+- El guardado normaliza campos nuevos para mantener compatibilidad con partidas antiguas.
+
+### Correcciones
+- El motor de eventos solo se amplía con un bonus de peso por crisis activa, sin reescrituras.
+
 ## v0.2.3 - 2026-07-03
 
 ### Cambios realizados

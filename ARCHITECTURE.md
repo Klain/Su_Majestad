@@ -257,3 +257,8 @@ Importante: si en el futuro cambia la forma del estado, debe añadirse una migra
 ## Regla de cambios importantes
 
 Cada cambio importante debe incrementar `GAME_VERSION`, actualizar `CHANGELOG.md`, actualizar `DEVLOG.md` si cambia el diseño y actualizar `ARCHITECTURE.md` si cambia el motor o el formato de contenido.
+
+
+## v0.3.0 - Capa roguelike de partida
+
+La capa roguelike vive en `game.js` y persiste `ambition`, `rulerTrait`, `activeCrisis`, `activeEdicts`, `edictChoices` y `completedObjectives` dentro del mismo estado de `localStorage`. `EventManager.weightFor` consulta la crisis activa para sumar un bonus pequeño a eventos cuyas familias coinciden; el resto del motor de eventos permanece intacto.

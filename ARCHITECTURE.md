@@ -228,6 +228,13 @@ Para mostrar un evento solo si existe un issue compatible, añade una regla `iss
 { kind: "consequence", family: "border", issue: { id: "border-crisis", minStage: 1 } }
 ```
 
+
+## Renderizado de pistas de consecuencias
+
+Las opciones siguen usando internamente `immediate`, `effects`, `outcomes`, `defer`, `addTags` e `issues` con el mismo formato de catálogo. La capa de UI en `game.js` transforma esos datos en chips cualitativos: icono del recurso definido en `resourceMeta`, flecha `↑`/`↓` para la dirección, texto de magnitud solo cuando ayuda a leer rápido y chips narrativos para incertidumbre, memoria o conflicto.
+
+Esta conversión es solo de presentación: no cambia `EventManager.applyChoice`, no expone números exactos y mantiene el límite visual de cuatro chips por opción para móvil.
+
 ## Cómo funciona el guardado
 
 El guardado usa `localStorage` con la clave actual `su-majestad-save-v2`. También se lee la clave antigua `su-majestad-save-v1` como compatibilidad básica.

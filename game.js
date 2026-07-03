@@ -1,4 +1,4 @@
-const GAME_VERSION = "v0.2.1";
+const GAME_VERSION = "v0.2.2";
 const STORAGE_KEY = "su-majestad-save-v2";
 const LEGACY_STORAGE_KEY = "su-majestad-save-v1";
 const MAX_DAYS = 30;
@@ -116,7 +116,7 @@ function renderResources() {
 function renderEvents() {
   document.getElementById("events").innerHTML = state.todaysEvents.map((item, eventIndex) => {
     const resolved = state.resolved.includes(eventIndex) || state.gameOver;
-    const options = item.options.map((option, optionIndex) => `<button class="option-button" type="button" ${resolved ? "disabled" : ""} data-event="${eventIndex}" data-option="${optionIndex}">${option.label}<span class="effects">${formatChoicePreview(option)}</span></button>`).join("");
+    const options = item.options.map((option, optionIndex) => `<button class="option-button" type="button" ${resolved ? "disabled" : ""} data-event="${eventIndex}" data-option="${optionIndex}"><span class="option-title">${option.label}</span><span class="effects chips" aria-label="Consecuencias previstas">${formatChoicePreview(option)}</span></button>`).join("");
     return `<article class="event-card ${resolved ? "resolved" : ""}"><h3 class="event-title">${item.title}</h3><p class="event-text">${item.text}</p><div class="options">${options}</div></article>`;
   }).join("");
 
@@ -129,16 +129,21 @@ function renderIssues() {
   const panel = document.getElementById("issues");
   if (!panel) return;
   const issues = state.issues || [];
+  const summary = issues.length
+    ? `${issues.length} conflicto${issues.length === 1 ? "" : "s"} activo${issues.length === 1 ? "" : "s"}: ${issues.slice(0, 2).map((issue) => formatIssueType(issue.type)).join(", ")}${issues.length > 2 ? "…" : ""}`
+    : "No hay conflictos abiertos. Por ahora.";
   panel.innerHTML = `
-    <h2>Issues activos</h2>
-    ${issues.length ? issues.map((issue) => `
-      <article class="issue-row">
-        <strong>${formatIssueType(issue.type)}</strong>
-        <span>Actor: ${issue.actorId} · Etapa ${issue.stage} · ${issue.daysActive} días</span>
-        <span>Tensión ${issue.tension} · Confianza ${issue.trust}</span>
-        <small>${issue.tags.join(", ") || "sin etiquetas"}</small>
-      </article>
-    `).join("") : "<p>No hay conflictos abiertos. Por ahora.</p>"}
+    <details class="compact-details">
+      <summary><span>Issues activos</span><strong>${summary}</strong></summary>
+      ${issues.length ? issues.map((issue) => `
+        <article class="issue-row">
+          <strong>${formatIssueType(issue.type)}</strong>
+          <span>Actor: ${issue.actorId} · Etapa ${issue.stage} · ${issue.daysActive} días</span>
+          <span>Tensión ${issue.tension} · Confianza ${issue.trust}</span>
+          <small>${issue.tags.join(", ") || "sin etiquetas"}</small>
+        </article>
+      `).join("") : ""}
+    </details>
   `;
 }
 
@@ -149,12 +154,15 @@ function formatIssueType(type) {
 function renderMemory() {
   const memory = document.getElementById("memory");
   if (!memory) return;
-  const recent = state.history.slice(-3).reverse();
+  const recent = state.history.slice(-2).reverse();
   const tags = state.tags.slice(-6);
+  const summary = `${state.pendingEvents.length} consecuencia${state.pendingEvents.length === 1 ? "" : "s"} pendiente${state.pendingEvents.length === 1 ? "" : "s"} · ${recent.length} recuerdo${recent.length === 1 ? "" : "s"} reciente${recent.length === 1 ? "" : "s"}`;
   memory.innerHTML = `
-    <h2>Memoria del reino</h2>
-    <p>${state.pendingEvents.length} consecuencias pendientes. ${tags.length ? `Rumores: ${tags.join(", ")}.` : "El reino aún no ha decidido quién eres."}</p>
-    ${recent.length ? `<ul>${recent.map((item) => `<li>Día ${item.day}: ${item.choice} (${item.eventTitle})${item.resultText ? ` — ${item.resultText}` : ""}</li>`).join("")}</ul>` : ""}
+    <details class="compact-details">
+      <summary><span>Memoria del reino</span><strong>${summary}</strong></summary>
+      <p>${tags.length ? `Rumores: ${tags.join(", ")}.` : "El reino aún no ha decidido quién eres."}</p>
+      ${recent.length ? `<ul>${recent.map((item) => `<li>Día ${item.day}: ${item.choice} (${item.eventTitle})${item.resultText ? ` — ${item.resultText}` : ""}</li>`).join("")}</ul>` : ""}
+    </details>
   `;
 }
 
@@ -177,56 +185,61 @@ function renderMessage() {
 }
 
 function formatChoicePreview(option) {
-  const parts = [];
-  if (option.outcomes?.length) parts.push(...formatOutcomeHints(option.outcomes));
-  else parts.push(...formatEffects(option.immediate || option.effects || {}));
-  const hooks = formatStoryHooks(option);
-  if (hooks) parts.push(hooks);
-  return [...new Set(parts)].join(" · ") || "Consecuencia incierta";
+  const chips = [];
+  if (option.outcomes?.length) chips.push(...formatOutcomeChips(option.outcomes));
+  else chips.push(...formatEffectChips(option.immediate || option.effects || {}));
+  chips.push(...formatStoryHookChips(option));
+
+  const uniqueChips = dedupeChips(chips);
+  const visible = uniqueChips.slice(0, 4);
+  if (uniqueChips.length > 4) visible[3] = { icon: "✦", text: "+ más" };
+  if (!visible.length) visible.push({ icon: "❓", text: "Incierta" });
+  return visible.map(({ icon, text, tone = "" }) => `<span class="effect-chip ${tone}">${icon} ${text}</span>`).join("");
 }
 
-function formatEffects(effects) {
+function formatEffectChips(effects) {
   return Object.entries(effects)
     .filter(([key, value]) => resourceMeta[key] && value !== 0)
-    .map(([key, value]) => formatImpact(key, value));
+    .sort(([, a], [, b]) => Math.abs(b) - Math.abs(a))
+    .map(([key, value]) => formatImpactChip(key, value));
 }
 
-function formatImpact(key, value) {
-  const resource = resourceMeta[key][0].toLowerCase();
+function formatImpactChip(key, value) {
+  const [name, icon] = resourceMeta[key];
   const magnitude = Math.abs(value);
-  const level = magnitude >= 8 ? "fuerte" : magnitude >= 4 ? "moderado" : "leve";
-  if (value > 0) {
-    if (key === "gold") return level === "fuerte" ? "Gran ingreso de oro" : `Ganancia ${level} de oro`;
-    if (key === "threat") return `${capitalize(level)} aumento de amenaza`;
-    return `Mejora ${level} de ${resource}`;
-  }
-  if (key === "gold") return level === "fuerte" ? "Gran gasto de oro" : `Gasto ${level} de oro`;
-  if (key === "people") return `Pérdida ${level} de apoyo popular`;
-  if (key === "threat") return `Reducción ${level} de amenaza`;
-  return `Pérdida ${level} de ${resource}`;
+  const level = magnitude >= 8 ? " fuerte" : magnitude >= 4 ? " moderado" : "";
+  return { icon, text: `${name} ${value > 0 ? "↑" : "↓"}${level}`, tone: value > 0 ? "positive" : "negative" };
 }
 
-function formatOutcomeHints(outcomes) {
-  const hints = ["Resultado incierto"];
-  const probabilities = outcomes.map((outcome) => outcome.probability || 0);
-  const loss = outcomes.some((outcome) => Object.values(outcome.immediate || outcome.effects || {}).some((value) => value < 0));
-  const reward = outcomes.some((outcome) => Object.values(outcome.immediate || outcome.effects || {}).some((value) => value > 0));
-  if (Math.max(...probabilities) < 0.5 || loss) hints.push("Riesgo alto");
-  else if (probabilities.some((probability) => probability <= 0.25)) hints.push("Riesgo medio");
-  else hints.push("Riesgo bajo");
-  if (reward) hints.push("Posible recompensa");
-  if (loss) hints.push("Posible pérdida");
-  return hints;
+function formatOutcomeChips(outcomes) {
+  const combined = {};
+  outcomes.forEach((outcome) => {
+    Object.entries(outcome.immediate || outcome.effects || {}).forEach(([key, value]) => {
+      if (!resourceMeta[key] || value === 0) return;
+      combined[key] = (combined[key] || 0) + Math.sign(value) * Math.abs(value) * (outcome.probability || 1);
+    });
+  });
+  const chips = formatEffectChips(combined);
+  chips.unshift({ icon: "❓", text: "Incierta", tone: "uncertain" });
+  return chips;
 }
 
-function capitalize(text) { return text.charAt(0).toUpperCase() + text.slice(1); }
+function dedupeChips(chips) {
+  const seen = new Set();
+  return chips.filter((chip) => {
+    const key = `${chip.icon}-${chip.text}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 
-function formatStoryHooks(option) {
+function formatStoryHookChips(option) {
   const hooks = [];
-  if (option.addTags?.length) hooks.push("El reino recordará esto");
-  if (option.defer?.length) hooks.push("Consecuencia incierta");
-  if (option.issues?.length) hooks.push("Afecta un conflicto activo");
-  return hooks.join(" · ");
+  if (option.addTags?.length) hooks.push({ icon: "🧠", text: "Memoria", tone: "memory" });
+  if (option.defer?.length) hooks.push({ icon: "❓", text: "Incierta", tone: "uncertain" });
+  if (option.issues?.length) hooks.push({ icon: "⚖️", text: "Conflicto", tone: "conflict" });
+  return hooks;
 }
 
 document.getElementById("newGameButton").addEventListener("click", newGame);

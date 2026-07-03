@@ -2,6 +2,18 @@
 
 Todas las versiones del proyecto deben usar formato semver y actualizar este archivo cuando haya cambios importantes.
 
+## v0.2.2 - 2026-07-03
+
+### Cambios realizados
+- Se pule la experiencia móvil con más padding inferior y soporte de `safe-area-inset-bottom` para que el botón sticky de terminar día no tape contenido.
+- Se convierten las consecuencias cualitativas de las opciones en chips visuales cortos con iconos, flechas de dirección y límite de cuatro pistas visibles.
+- Se mejora la jerarquía de los botones de opción separando título y consecuencias, reduciendo textos secundarios y aumentando la respiración entre cartas.
+- Memoria del reino e Issues activos pasan a mostrarse como resúmenes plegables por defecto para reducir densidad en móvil.
+
+### Correcciones
+- El botón deshabilitado de terminar día pierde protagonismo visual sin dejar de ser cómodo para táctil.
+- La interfaz conserva el motor narrativo, eventos, reglas y estructura de guardado existentes.
+
 ## v0.2.1 - 2026-07-03
 
 ### Cambios realizados

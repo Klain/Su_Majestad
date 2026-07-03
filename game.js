@@ -1,3 +1,4 @@
+const GAME_VERSION = "v0.1.0";
 const STORAGE_KEY = "su-majestad-save-v2";
 const LEGACY_STORAGE_KEY = "su-majestad-save-v1";
 const MAX_DAYS = 30;
@@ -91,6 +92,7 @@ function load() {
 }
 
 function render() {
+  document.getElementById("gameVersion").textContent = GAME_VERSION;
   document.getElementById("dayNumber").textContent = Math.min(state.day, MAX_DAYS);
   document.getElementById("dayProgress").style.width = `${(Math.min(state.day, MAX_DAYS) / MAX_DAYS) * 100}%`;
   renderResources();

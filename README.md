@@ -25,6 +25,9 @@ Pierdes si oro, comida, ejército, pueblo, nobleza o fe llegan a 0. También pie
 ## Características del MVP
 
 - Interfaz responsive orientada a móvil.
+- Sistema híbrido de eventos: sucesos simples aleatorios, eventos modulares con 1-2 escaladas y cadenas narrativas largas escritas a mano.
+- Issues activos del reino con actor, tipo, etapa, tensión, confianza, etiquetas, días activos y último día de evento.
+- Selector ponderado: peso base, bonus por issues relacionados, descarte de incompatibilidades y penalización por repetición reciente.
 - Catálogo modular de eventos con decisiones inmediatas, etiquetas, personajes recurrentes y consecuencias futuras.
 - Decisiones con cambios visibles en recursos, etiquetas narrativas y consecuencias diferidas.
 - Memoria persistente del reino: historial, etiquetas, personajes recurrentes y eventos pendientes.

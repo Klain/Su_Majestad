@@ -128,3 +128,30 @@ h2 { margin: 0; }
   padding-left: 1.1rem;
   opacity: 0.78;
 }
+
+.issues-card {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid rgba(244, 195, 91, 0.22);
+  border-radius: 16px;
+  background: rgba(244, 195, 91, 0.08);
+  color: #eadfce;
+}
+
+.issues-card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.issues-card p { margin: 0; opacity: 0.82; }
+
+.issue-row {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.issue-row:first-of-type { border-top: 0; padding-top: 0; }
+.issue-row strong { color: var(--gold); }
+.issue-row span, .issue-row small { color: var(--muted); font-size: 0.86rem; }

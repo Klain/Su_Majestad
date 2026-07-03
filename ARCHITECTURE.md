@@ -99,3 +99,32 @@ Importante: si en el futuro cambia la forma del estado, debe añadirse una migra
 ## Regla de cambios importantes
 
 Cada cambio importante debe incrementar `GAME_VERSION`, actualizar `CHANGELOG.md`, actualizar `DEVLOG.md` si cambia el diseño y actualizar `ARCHITECTURE.md` si cambia el motor.
+
+## v0.2.0: efectos inmediatos y outcomes probabilísticos
+
+Las opciones conservan compatibilidad con el formato clásico `immediate` o `effects`. Cuando una opción tiene `immediate`, `EventManager.applyChoice` aplica ese objeto de recursos directamente como antes.
+
+Una opción también puede declarar `outcomes`, una lista de resultados inmediatos posibles:
+
+```js
+{
+  label: "Almacenar grano",
+  outcomes: [
+    { probability: 0.55, immediate: { food: 10 }, text: "El grano se conserva bien." },
+    { probability: 0.30, immediate: { food: 4 }, text: "Parte del grano se estropea." },
+    { probability: 0.15, immediate: { food: -5 }, text: "Una plaga arruina los almacenes." }
+  ]
+}
+```
+
+Si existen `outcomes`, el motor elige uno con la misma lógica ponderada que las ramas diferidas y aplica solo el `immediate` del resultado elegido. Si no existen, usa `choice.immediate` o `choice.effects` para mantener eventos antiguos y partidas guardadas.
+
+La interfaz no debe renderizar números exactos de opciones. `game.js` traduce los efectos internos a impacto cualitativo:
+
+- Magnitud 1 a 3: efecto leve.
+- Magnitud 4 a 7: efecto moderado.
+- Magnitud 8 o más: efecto fuerte.
+
+Para `outcomes`, la interfaz muestra pistas como riesgo bajo, riesgo medio, riesgo alto, resultado incierto, posible recompensa o posible pérdida. Las probabilidades exactas permanecen internas.
+
+Cada elección registra en `history` el texto de resultado mostrado (`resultText`), el outcome si existió (`outcomeText`) y los efectos aplicados internamente (`effects`). Esto permite que la memoria del reino explique qué ocurrió sin perder datos útiles para depuración o futuras pantallas.

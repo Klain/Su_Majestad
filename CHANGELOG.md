@@ -2,6 +2,24 @@
 
 Todas las versiones del proyecto deben usar formato semver y actualizar este archivo cuando haya cambios importantes.
 
+## v0.2.0 - 2026-07-03
+
+### Cambios realizados
+- Se ocultan los números exactos de recursos en los botones de decisión para reducir la optimización por suma directa.
+- Se añade una presentación cualitativa de impactos: efectos leves, moderados y fuertes según la magnitud interna.
+- Se incorpora soporte para `outcomes` probabilísticos inmediatos por opción, manteniendo `immediate` como formato compatible.
+- Se muestran pistas cualitativas de riesgo, incertidumbre, recompensa y pérdida sin revelar porcentajes exactos.
+- Se muestra el resultado narrativo tras elegir una opción y se guarda ese resultado en el historial.
+- Se añade un primer evento con resultado inmediato probabilístico en la cosecha dorada.
+
+### Correcciones
+- La memoria del reino ahora puede mostrar qué ocurrió realmente, no solo qué opción eligió el jugador.
+- El motor conserva los valores numéricos internamente para balanceo sin exponerlos en las opciones.
+
+### Cambios pendientes conocidos
+- Las barras de recursos siguen mostrando valores exactos; el cambio se centra en ocultar sumas exactas en decisiones.
+- Falta una suite automática de tests de probabilidad e integridad del catálogo.
+
 ## v0.1.0 - 2026-07-03
 
 ### Cambios realizados

@@ -70,13 +70,14 @@ class EventManager {
   }
 
   applyChoice(state, eventItem, choice) {
-    const immediate = choice.immediate || choice.effects || {};
+    const outcome = this.pickOutcome(choice.outcomes || []);
+    const immediate = outcome ? (outcome.immediate || outcome.effects || {}) : (choice.immediate || choice.effects || {});
     this.applyEffects(state, immediate);
     this.addTags(state, choice.addTags || []);
     this.rememberCharacters(state, choice.characters || []);
     this.applyIssueActions(state, choice.issues || [], eventItem);
     this.scheduleDeferred(state, choice.defer || [], eventItem.id);
-    this.recordHistory(state, eventItem, choice);
+    this.recordHistory(state, eventItem, choice, outcome, immediate);
   }
 
   applyEffects(state, effects) {
@@ -149,8 +150,21 @@ class EventManager {
     });
   }
 
-  recordHistory(state, eventItem, choice) {
-    state.history.push({ day: state.day, eventId: eventItem.id, eventTitle: eventItem.title, family: eventItem.family || null, choice: choice.label, tags: choice.addTags || [] });
+  recordHistory(state, eventItem, choice, outcome = null, immediate = {}) {
+    const resultText = outcome?.text || choice.resultText || "La corte toma nota de tu decisión.";
+    const entry = {
+      day: state.day,
+      eventId: eventItem.id,
+      eventTitle: eventItem.title,
+      family: eventItem.family || null,
+      choice: choice.label,
+      tags: choice.addTags || [],
+      resultText,
+      outcomeText: outcome?.text || null,
+      effects: { ...immediate }
+    };
+    state.history.push(entry);
+    state.lastResult = entry;
   }
 
   addTags(state, tags) {
@@ -203,6 +217,11 @@ class EventManager {
 
   interpolate(text, context) {
     return String(text).replace(/\{character:([^}.]+)\.([^}]+)}/g, (_, id, field) => context.characters[id]?.[field] || "alguien conocido");
+  }
+
+  pickOutcome(outcomes) {
+    if (!Array.isArray(outcomes) || !outcomes.length) return null;
+    return this.pickBranch(outcomes);
   }
 
   pickBranch(branches) {

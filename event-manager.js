@@ -136,7 +136,9 @@ class EventManager {
   }
 
   resolveIssue(state, issueId, tags = []) {
+    const before = state.issues.length;
     state.issues = state.issues.filter((issue) => issue.id !== issueId);
+    if (state.issues.length < before) state.completedObjectives = { ...(state.completedObjectives || {}), issuesResolved: (state.completedObjectives?.issuesResolved || 0) + 1 };
     this.addTags(state, tags);
   }
 
@@ -252,8 +254,16 @@ class EventManager {
     const tags = new Set(state.tags || []);
     const affinity = (item.affinityTags || []).filter((tag) => tags.has(tag)).length;
     const issueBonus = this.issueWeightBonus(item, state);
+    const crisisBonus = this.crisisWeightBonus(item, state);
     const recencyPenalty = this.recentPenalty(item, state);
-    return Math.max(0.05, ((item.weight || 1) + affinity * 2 + issueBonus) * recencyPenalty);
+    return Math.max(0.05, ((item.weight || 1) + affinity * 2 + issueBonus + crisisBonus) * recencyPenalty);
+  }
+
+  crisisWeightBonus(item, state) {
+    const crisis = state.activeCrisis;
+    if (!crisis?.families?.length || (crisis.remainingDays || 0) <= 0) return 0;
+    const eventFamilies = new Set([item.family, ...(item.families || [])].filter(Boolean));
+    return crisis.families.filter((family) => eventFamilies.has(family)).length * (crisis.weightBonus || 2.5);
   }
 
   issueWeightBonus(item, state) {

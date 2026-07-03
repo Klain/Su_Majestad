@@ -71,3 +71,8 @@ Desde `v0.2.0`, las decisiones presentan intención y riesgo con lenguaje cualit
 También aparece una nueva capa de incertidumbre inmediata. Una opción puede tener varios `outcomes` posibles con probabilidades internas. El jugador no ve el porcentaje exacto, solo señales narrativas de riesgo. Al elegir, el juego revela qué ocurrió realmente con un mensaje breve y lo registra en la memoria del reino.
 
 Este cambio refuerza la fantasía de gobernar bajo información incompleta: la corona decide por criterio político, intuición narrativa y consecuencias posibles, no por optimización perfecta de barras.
+
+
+## v0.3.0 - Sistemas roguelike ligeros
+
+Se añade identidad de partida mediante rasgo inicial, ambición, crisis de temporada y edictos. El diseño evita una historia principal o quests largas: son capas sistémicas pequeñas que modifican recursos, objetivos y pesos de familias de eventos.

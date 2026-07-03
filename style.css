@@ -226,3 +226,54 @@ h2 { margin: 0; }
   .actions { margin-left: -24px; margin-right: -24px; padding-left: 24px; padding-right: 24px; }
   .event-text { font-size: 1rem; }
 }
+
+.reign-card {
+  margin-top: 14px;
+  padding: 0.72rem;
+  border: 1px solid rgba(180, 124, 255, 0.22);
+  border-radius: 16px;
+  background: rgba(180, 124, 255, 0.08);
+}
+
+.reign-grid {
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.reign-grid span {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+  color: #eadfce;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.reign-grid strong {
+  color: var(--gold);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.edict-offer {
+  margin-top: 14px;
+  padding: 1rem;
+  border: 1px solid rgba(117, 212, 155, 0.28);
+  border-radius: 18px;
+  background: rgba(117, 212, 155, 0.08);
+}
+
+.edict-offer.hidden { display: none; }
+.edict-offer strong { color: var(--gold); }
+.edict-offer p { color: var(--muted); font-size: 0.88rem; margin: 0.35rem 0 0.75rem; }
+.edict-options { display: grid; gap: 0.6rem; }
+.edict-button { background: rgba(59, 42, 79, 0.98); display: grid; gap: 0.25rem; padding: 0.72rem; text-align: left; }
+.edict-button span { color: #f8ebd8; }
+.edict-button small { color: var(--muted); font-weight: 700; line-height: 1.25; }
+
+@media (min-width: 720px) {
+  .reign-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .edict-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

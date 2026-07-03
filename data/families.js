@@ -1,0 +1,13 @@
+const families = [
+  { id: "commerce", name: "Comercio", description: "Mercaderes, caravanas, impuestos, rutas y abastecimiento urbano.", commonTags: ["merchant", "caravan", "taxes", "trade"], compatibleIssueTypes: ["trade_dispute", "smuggling", "supply"] },
+  { id: "church", name: "Iglesia", description: "Clero, predicadores, reliquias, diezmos y legitimidad espiritual.", commonTags: ["faith", "clergy", "sermon", "relic"], compatibleIssueTypes: ["heresy", "tithe", "church_favor"] },
+  { id: "nobility", name: "Nobleza", description: "Casas nobles, linajes, tierras, honor, vasallaje y privilegios.", commonTags: ["noble", "house", "honor", "land_claim"], compatibleIssueTypes: ["noble_claim", "succession", "feud"] },
+  { id: "people", name: "Pueblo", description: "Aldeanos, artesanos, barrios, impuestos populares y bienestar común.", commonTags: ["peasants", "market", "unrest", "public_order"], compatibleIssueTypes: ["unrest", "shortage", "public_works"] },
+  { id: "army", name: "Ejército", description: "Soldados, patrullas, levas, mariscales, disciplina y defensa interior.", commonTags: ["soldiers", "patrol", "levy", "marshal"], compatibleIssueTypes: ["mutiny", "campaign", "garrison"] },
+  { id: "border", name: "Frontera", description: "Marcas, refugiados, incursiones, torres, pactos y amenazas exteriores cercanas.", commonTags: ["border", "refugees", "raiders", "march"], compatibleIssueTypes: ["border", "border_crisis", "raid"] },
+  { id: "crime", name: "Crimen", description: "Bandidos, contrabando, informantes, castigos y seguridad de caminos.", commonTags: ["bandits", "smuggling", "informants", "roads"], compatibleIssueTypes: ["banditry", "smuggling", "corruption"] },
+  { id: "exploration", name: "Exploración", description: "Mapas, expediciones, ruinas, hallazgos y peligros desconocidos.", commonTags: ["map", "expedition", "ruins", "relic"], compatibleIssueTypes: ["expedition", "lost_explorers", "ancient_threat"] },
+  { id: "royal_family", name: "Familia real", description: "Dinastía, matrimonios, herederos, regencias y conflictos palaciegos.", commonTags: ["dynasty", "heir", "court", "marriage"], compatibleIssueTypes: ["succession", "regency", "marriage_alliance"] },
+  { id: "disease", name: "Enfermedad", description: "Plagas, sanadores, cuarentenas, graneros contaminados y miedo colectivo.", commonTags: ["plague", "healers", "quarantine", "rats"], compatibleIssueTypes: ["plague", "quarantine", "medicine"] },
+  { id: "diplomacy", name: "Diplomacia", description: "Enviados, tratados, tributos, juramentos y relaciones con poderes externos.", commonTags: ["envoy", "treaty", "tribute", "oath"], compatibleIssueTypes: ["treaty", "envoy", "foreign_claim"] }
+];

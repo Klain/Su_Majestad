@@ -1,4 +1,4 @@
-const GAME_VERSION = "v0.2.0";
+const GAME_VERSION = "v0.2.1";
 const STORAGE_KEY = "su-majestad-save-v2";
 const LEGACY_STORAGE_KEY = "su-majestad-save-v1";
 const MAX_DAYS = 30;
@@ -15,7 +15,7 @@ const resourceMeta = {
 };
 
 const startingResources = { gold: 55, food: 55, army: 45, people: 55, nobility: 50, faith: 50, threat: 20 };
-const eventManager = new EventManager(events);
+const eventManager = new EventManager(events, { actors, families });
 let state;
 
 function newGame() {

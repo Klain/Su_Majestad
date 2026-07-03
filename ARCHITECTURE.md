@@ -2,15 +2,23 @@
 
 ## Estructura actual de archivos
 
-- `index.html`: estructura de la aplicación, puntos de montaje de la interfaz y carga de scripts.
+- `index.html`: estructura de la aplicación, puntos de montaje de la interfaz y carga de scripts estáticos para GitHub Pages.
 - `style.css`: estilos visuales, responsive móvil/escritorio y componentes de cartas, recursos, mensajes, memoria e issues.
 - `game.js`: estado principal, bucle de partida, renderizado, guardado, carga y constante `GAME_VERSION`.
-- `event-manager.js`: motor de eventos, memoria, consecuencias, issues, selección ponderada e interpolación de texto.
-- `events.js`: catálogo de eventos y helper para normalizar opciones.
+- `event-manager.js`: motor de eventos, memoria, consecuencias, actores, issues, selección ponderada e interpolación de texto.
+- `events.js`: helpers globales `event`, `normalizeOption`, el catálogo agregado `events` y `registerEvents`.
+- `data/actors.js`: actores persistentes reutilizables por eventos y cadenas.
+- `data/families.js`: familias narrativas usadas para clasificar eventos e issues.
+- `data/events/common-events.js`: eventos normales de aparición diaria.
+- `data/events/consequence-events.js`: eventos de consecuencia diferida que no se roban de forma normal.
+- `data/events/chains/border-chain.js`: cadena narrativa de la frontera.
+- `data/events/chains/noble-chain.js`: cadena narrativa de la reclamación noble.
 - `README.md`: documentación de uso, publicación, versionado y roadmap.
 - `CHANGELOG.md`: historial versionado de cambios.
 - `DEVLOG.md`: evolución de diseño y decisiones de producto.
 - `ARCHITECTURE.md`: esta guía técnica.
+
+El proyecto sigue sin usar dependencias externas ni paso de build. Por eso los módulos son scripts clásicos cargados en orden desde `index.html`: primero helpers y catálogo agregado, después datos, después `EventManager` y finalmente `game.js`.
 
 ## Cómo funciona el bucle del juego
 
@@ -18,55 +26,207 @@
 2. Si no hay partida válida, crea una nueva con recursos iniciales, memoria vacía y día 1.
 3. Cada día se seleccionan hasta 2 eventos: primero consecuencias vencidas y después eventos disponibles del catálogo.
 4. El jugador resuelve cada evento eligiendo una opción.
-5. Cada elección aplica efectos inmediatos, etiquetas, personajes, acciones sobre issues, consecuencias diferidas e historial.
+5. Cada elección aplica efectos inmediatos, etiquetas, actores recordados, acciones sobre issues, consecuencias diferidas e historial.
 6. Cuando los 2 eventos del día están resueltos, el jugador puede terminar la jornada.
 7. Al terminar el día, avanzan los issues activos, se roba el siguiente consejo o se gana si se superan los 30 días.
 8. Tras cada decisión o avance se guarda automáticamente y se renderiza la interfaz.
 
-## Cómo se define un evento
+## Catálogo modular
 
-Los eventos se definen en `events.js` con el helper `event(id, title, text, options, extra)`.
-
-Cada evento incluye:
-
-- `id`: identificador único y estable.
-- `title`: título visible.
-- `text`: descripción narrativa.
-- `options`: lista de decisiones.
-- `extra`: metadatos opcionales como `kind`, `family`, `families`, `weight`, requisitos de etiquetas o reglas de issue.
-
-Una opción puede usar formato corto:
+`events.js` ya no contiene todo el contenido narrativo. Su responsabilidad es ofrecer compatibilidad con el formato anterior:
 
 ```js
-["Cobrad impuestos", { gold: 8, people: -2 }]
+const events = [];
+function registerEvents(items) {
+  events.push(...items);
+}
 ```
 
-O formato con configuración narrativa:
+Cada archivo bajo `data/events/` registra su parte del catálogo con `registerEvents([...])`. Mientras un archivo se cargue antes de `game.js`, el `EventManager` recibe el mismo array `events` que recibía antes, así que el motor actual sigue funcionando.
+
+## Cómo crear un evento normal
+
+Añade el evento en `data/events/common-events.js` o en un nuevo archivo de `data/events/` cargado desde `index.html`.
 
 ```js
-[
-  "Dadles escolta",
-  { army: -2 },
-  {
-    addTags: ["supported_merchants"],
-    characters: [{ id: "dario", name: "Dario Valen", role: "mercader aliado" }],
-    defer: [{ delay: 6, eventId: "dario_prospers" }]
+registerEvents([
+  event(
+    "market_fire",
+    "Incendio en el mercado",
+    "Las lonas arden y los comerciantes piden ayuda inmediata.",
+    [
+      ["Enviar cubas reales", { gold: -4, people: 3 }, { family: "commerce" }],
+      ["Dejar que se organicen", { people: -2, threat: 2 }]
+    ],
+    { family: "commerce", families: ["commerce", "people"], weight: 1 }
+  )
+]);
+```
+
+Reglas prácticas:
+
+1. Usa un `id` único y estable; puede aparecer en partidas guardadas o consecuencias pendientes.
+2. Comprueba que cada recurso existe en `resourceMeta` de `game.js`.
+3. Usa `family` para la familia principal y `families` si el evento también encaja con otras familias o tipos de issue.
+4. Evita efectos extremos salvo que el riesgo narrativo lo justifique.
+
+## Cómo crear un evento de consecuencia
+
+Los eventos de consecuencia deben vivir preferentemente en `data/events/consequence-events.js` o junto a su cadena en `data/events/chains/`. Declara `kind: "consequence"` para que no aparezcan como evento diario normal.
+
+```js
+event(
+  "market_fire_debt",
+  "La deuda del mercado",
+  "Los comerciantes recuerdan quién pagó las cubas y quién cerró la puerta.",
+  [
+    ["Aceptar su gratitud", { gold: 5 }, { addTags: ["merchant_gratitude"] }],
+    ["Pedir más impuestos", { gold: 8, people: -3 }, { addTags: ["taxed_merchants"] }]
+  ],
+  { kind: "consequence", requiresTags: ["helped_market"], family: "commerce" }
+)
+```
+
+Programa la consecuencia desde una opción con `defer`:
+
+```js
+["Enviar cubas reales", { gold: -4, people: 3 }, {
+  addTags: ["helped_market"],
+  defer: [{ delay: 5, eventId: "market_fire_debt" }]
+}]
+```
+
+También puedes usar ramas probabilísticas:
+
+```js
+defer: [{
+  delay: 6,
+  branches: [
+    { probability: 0.65, eventId: "merchant_reward" },
+    { probability: 0.35, eventId: "merchant_complaint" }
+  ]
+}]
+```
+
+## Cómo crear una cadena
+
+Una cadena es un grupo de eventos relacionados dentro de `data/events/chains/`. Usa un archivo propio cuando tenga varios pasos o un arco dramático claro.
+
+Estructura recomendada:
+
+1. Un evento inicial normal que pueda crear tags o issues.
+2. Uno o más eventos `kind: "consequence"` enlazados por `defer`.
+3. Reglas `requiresTags`, `forbiddenTags` o `issue` para evitar pasos imposibles.
+4. Opciones finales que resuelvan el arco con tags persistentes o resolución de issue.
+
+Ejemplo de ruta:
+
+```js
+// data/events/chains/example-chain.js
+registerEvents([
+  event("example_start", "Inicio", "...", [["Actuar", {}, { defer: [{ delay: 4, eventId: "example_middle" }] }]], { family: "diplomacy" }),
+  event("example_middle", "Nudo", "...", [["Resolver", {}, { addTags: ["example_resolved"] }]], { kind: "consequence", family: "diplomacy" })
+]);
+```
+
+Si creas un archivo nuevo, añádelo a `index.html` antes de `event-manager.js`.
+
+## Cómo crear un actor
+
+Añade actores persistentes en `data/actors.js` con esta forma:
+
+```js
+{
+  id: "dario",
+  name: "Dario Valen",
+  role: "Mercader",
+  family: "commerce",
+  tags: ["merchant", "caravan"],
+  trust: 50,
+  tension: 20,
+  description: "Mercader extranjero que recuerda los favores y agravios de la corona."
+}
+```
+
+`id` debe ser único. `family` debe apuntar a una familia narrativa existente cuando sea posible. `trust` y `tension` son valores iniciales para futuras mecánicas de relación; actualmente se preservan cuando el actor se recuerda en `state.characters`.
+
+## Cómo vincular un evento con un actor
+
+En una opción, usa `characters` con el `id` del actor. El `EventManager` mezcla los datos base de `data/actors.js` con los datos puntuales de la opción.
+
+```js
+["Dadles escolta", { army: -2 }, {
+  characters: [{ id: "dario", role: "Mercader aliado" }],
+  addTags: ["supported_merchants"]
+}]
+```
+
+Después puedes interpolar campos del actor recordado:
+
+```js
+"Regreso de {character:dario.name}"
+```
+
+Si el actor no se ha recordado todavía, la interpolación usa un texto genérico para no romper el evento.
+
+## Cómo vincular un evento con una familia
+
+Las familias viven en `data/families.js`. Vincula eventos con:
+
+- `family`: familia principal, usada por historial y penalización de repetición reciente.
+- `families`: lista de familias o tipos de issue relacionados, usada para dar peso extra si hay issues activos compatibles.
+
+```js
+event("border_refugees", "Refugiados en la frontera", "...", options, {
+  family: "border",
+  families: ["border"]
+})
+```
+
+Usa IDs de `data/families.js` para contenido nuevo salvo que estés modelando un tipo de issue específico ya existente.
+
+## Cómo crear un issue
+
+Un issue representa un conflicto persistente. Se crea desde una opción con `issues`:
+
+```js
+issues: [{
+  action: "create",
+  issue: {
+    id: "border-crisis",
+    actorId: "marca_oriental",
+    type: "border",
+    stage: 0,
+    tension: 38,
+    trust: 45,
+    tags: ["refugees"]
   }
-]
+}]
 ```
 
-## Cómo se aplican consecuencias
+Campos importantes:
 
-`EventManager.applyChoice` centraliza las consecuencias de una opción:
+- `id`: identificador único del conflicto.
+- `actorId`: actor, facción o entidad responsable.
+- `type`: tipo de issue; idealmente compatible con una familia.
+- `stage`: escalón narrativo, empezando en 0.
+- `tension`: presión o riesgo del conflicto, entre 0 y 100.
+- `trust`: confianza del actor hacia la corona, entre 0 y 100.
+- `tags`: marcas específicas del conflicto.
 
-- `immediate` o `effects`: modifica recursos visibles y los limita entre 0 y 100.
-- `addTags`: añade memoria narrativa persistente.
-- `characters`: registra o actualiza personajes recurrentes.
-- `issues`: crea, modifica, escala o resuelve conflictos persistentes.
-- `defer`: programa eventos futuros para un día posterior.
-- historial: guarda día, evento, familia, elección y etiquetas.
+Acciones disponibles:
 
-Los eventos diferidos se guardan en `state.pendingEvents`. Al inicio de cada día, `dueEventsForDay` extrae los vencidos, resuelve posibles ramas y comprueba compatibilidad antes de mostrarlos.
+```js
+{ action: "modify", issueId: "border-crisis", tension: -12, trust: 10 }
+{ action: "escalate", issueId: "border-crisis", tension: 8, trust: -6 }
+{ action: "resolve", issueId: "border-crisis", addTags: ["border_secured"] }
+```
+
+Para mostrar un evento solo si existe un issue compatible, añade una regla `issue` al evento:
+
+```js
+{ kind: "consequence", family: "border", issue: { id: "border-crisis", minStage: 1 } }
+```
 
 ## Cómo funciona el guardado
 
@@ -76,16 +236,6 @@ La función `save()` serializa el estado completo. La función `load()` intenta 
 
 Importante: si en el futuro cambia la forma del estado, debe añadirse una migración o ampliar la normalización para no romper partidas existentes.
 
-## Cómo añadir nuevos eventos
-
-1. Añade el evento en `events.js` con un `id` único.
-2. Comprueba que cada recurso usado existe en `resourceMeta`.
-3. Si programas `defer`, verifica que el `eventId` de destino exista.
-4. Si usas `requiresTags` o `forbiddenTags`, asegúrate de que las etiquetas se añaden desde alguna opción alcanzable.
-5. Para eventos de issue, define bien `family`, `families` y la regla `issue`.
-6. Evita efectos extremos salvo que sean parte explícita del riesgo narrativo.
-7. Actualiza documentación y versión si el cambio es importante.
-
 ## Qué partes del código conviene no romper
 
 - La forma de `state`: `day`, `resources`, `todaysEvents`, `resolved`, `gameOver`, `outcome`, `tags`, `history`, `pendingEvents`, `characters` e `issues`.
@@ -94,37 +244,9 @@ Importante: si en el futuro cambia la forma del estado, debe añadirse una migra
 - La normalización de opciones en `events.js`, porque permite compatibilidad entre formato corto y formato extendido.
 - `EventManager.applyChoice`, porque es el punto único de aplicación de consecuencias.
 - La clave de guardado sin plan de migración.
+- El orden de scripts de `index.html`: helpers, datos, motor, juego.
 - La compatibilidad con GitHub Pages: el proyecto debe seguir funcionando como archivos estáticos sin build step.
 
 ## Regla de cambios importantes
 
-Cada cambio importante debe incrementar `GAME_VERSION`, actualizar `CHANGELOG.md`, actualizar `DEVLOG.md` si cambia el diseño y actualizar `ARCHITECTURE.md` si cambia el motor.
-
-## v0.2.0: efectos inmediatos y outcomes probabilísticos
-
-Las opciones conservan compatibilidad con el formato clásico `immediate` o `effects`. Cuando una opción tiene `immediate`, `EventManager.applyChoice` aplica ese objeto de recursos directamente como antes.
-
-Una opción también puede declarar `outcomes`, una lista de resultados inmediatos posibles:
-
-```js
-{
-  label: "Almacenar grano",
-  outcomes: [
-    { probability: 0.55, immediate: { food: 10 }, text: "El grano se conserva bien." },
-    { probability: 0.30, immediate: { food: 4 }, text: "Parte del grano se estropea." },
-    { probability: 0.15, immediate: { food: -5 }, text: "Una plaga arruina los almacenes." }
-  ]
-}
-```
-
-Si existen `outcomes`, el motor elige uno con la misma lógica ponderada que las ramas diferidas y aplica solo el `immediate` del resultado elegido. Si no existen, usa `choice.immediate` o `choice.effects` para mantener eventos antiguos y partidas guardadas.
-
-La interfaz no debe renderizar números exactos de opciones. `game.js` traduce los efectos internos a impacto cualitativo:
-
-- Magnitud 1 a 3: efecto leve.
-- Magnitud 4 a 7: efecto moderado.
-- Magnitud 8 o más: efecto fuerte.
-
-Para `outcomes`, la interfaz muestra pistas como riesgo bajo, riesgo medio, riesgo alto, resultado incierto, posible recompensa o posible pérdida. Las probabilidades exactas permanecen internas.
-
-Cada elección registra en `history` el texto de resultado mostrado (`resultText`), el outcome si existió (`outcomeText`) y los efectos aplicados internamente (`effects`). Esto permite que la memoria del reino explique qué ocurrió sin perder datos útiles para depuración o futuras pantallas.
+Cada cambio importante debe incrementar `GAME_VERSION`, actualizar `CHANGELOG.md`, actualizar `DEVLOG.md` si cambia el diseño y actualizar `ARCHITECTURE.md` si cambia el motor o el formato de contenido.

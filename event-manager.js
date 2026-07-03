@@ -3,6 +3,8 @@ class EventManager {
     this.catalog = catalog;
     this.eventsById = new Map(catalog.map((item) => [item.id, item]));
     this.random = options.random || Math.random;
+    this.actorsById = new Map((options.actors || []).map((actor) => [actor.id, actor]));
+    this.familiesById = new Map((options.families || []).map((family) => [family.id, family]));
     this.recentRepeatDays = options.recentRepeatDays || 8;
   }
 
@@ -175,8 +177,9 @@ class EventManager {
 
   rememberCharacters(state, characters) {
     characters.forEach((character) => {
+      const actor = this.actorsById.get(character.id) || {};
       const current = state.characters[character.id] || {};
-      state.characters[character.id] = { ...current, ...character, appearances: (current.appearances || 0) + 1 };
+      state.characters[character.id] = { ...actor, ...current, ...character, appearances: (current.appearances || 0) + 1 };
     });
   }
 

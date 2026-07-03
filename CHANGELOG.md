@@ -2,6 +2,22 @@
 
 Todas las versiones del proyecto deben usar formato semver y actualizar este archivo cuando haya cambios importantes.
 
+## v0.2.1 - 2026-07-03
+
+### Cambios realizados
+- Se divide el catálogo de eventos en módulos bajo `data/events/` para preparar el crecimiento a cientos de eventos.
+- Se añade `data/actors.js` con actores persistentes y se migra Dario Valen al nuevo registro de actores.
+- Se añade `data/families.js` con familias narrativas para comercio, iglesia, nobleza, pueblo, ejército, frontera, crimen, exploración, familia real, enfermedad y diplomacia.
+- `events.js` queda como capa de compatibilidad con helpers y registro agregado para mantener el `EventManager` actual.
+- `EventManager` puede enriquecer personajes recordados desde el catálogo de actores sin romper datos antiguos.
+- Se actualiza la arquitectura con guías para crear eventos normales, consecuencias, cadenas, actores, familias e issues.
+
+### Correcciones
+- La carga estática sigue siendo compatible con GitHub Pages y no requiere dependencias externas ni build step.
+
+### Cambios pendientes conocidos
+- Aún falta validación automática para detectar IDs duplicados, consecuencias inexistentes e issues mal formados.
+
 ## v0.2.0 - 2026-07-03
 
 ### Cambios realizados

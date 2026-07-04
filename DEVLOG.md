@@ -105,3 +105,9 @@ Las opciones del consejo incorporan una ayuda dedicada con impacto previsto y pr
 La interfaz de decisiones separa ahora tres capas para reforzar el tono roguelike sin volver a una hoja de cálculo. El chip visible es lectura rápida: recurso, dirección y magnitud mediante flechas. El tooltip individual del chip explica de forma cualitativa si el recurso crecerá o bajará mínimamente, moderadamente o enormemente, y avisa cuando una decisión probabilística puede variar entre ramas.
 
 El tooltip general de la decisión deja de listar costes exactos por defecto. Su función pasa a ser informar el riesgo: porcentajes de ramas inmediatas, lectura favorable/problemática/mixta y probabilidades de consecuencias futuras cuando existen. Los valores numéricos exactos quedan reservados para `DEBUG_UI`, de modo que el balance sigue siendo auditable durante desarrollo sin dominar la experiencia del jugador.
+
+## v0.5.0 - Evolución de rasgos
+
+Los rasgos del monarca pasan a formar un árbol de 3 tiers. Cada run empieza con un rasgo común, puede evolucionar a raro al llegar al día 10 y a legendario al llegar al día 20. Las evoluciones no reemplazan lo anterior: forman una cadena del reinado y suman efectos `onAcquire` y pasivos diarios.
+
+Este cambio refuerza la identidad roguelike de cada partida sin tocar el `EventManager` ni reestructurar eventos. La amenaza mantiene polaridad inversa: reducirla es beneficioso y la UI lo comunica como favorable.

@@ -27,7 +27,7 @@ El proyecto sigue sin usar dependencias externas ni paso de build. Por eso los m
 
 Después de renderizar la pantalla de partida, `render()` llama a `initTooltips()`. Esta función registra interacciones de ratón, foco y toque sobre los activadores, crea una única burbuja flotante `#tooltipBubble` con `role="tooltip"` y la posiciona según escritorio o móvil. Tocar otro tooltip reemplaza el activo, tocar fuera cierra la burbuja y Escape también la oculta.
 
-Los tooltips no cambian mecánicas ni estado persistente: solo añaden ayuda contextual en la capa de presentación. En botones de decisión, el clic del activador detiene la propagación para que tocar exactamente un chip o icono de ayuda no elija la opción por accidente. Cuando una opción define probabilidades explícitas, el tooltip puede resumirlas; si no, muestra solo impacto previsto y consecuencias cualitativas.
+Los tooltips no cambian mecánicas ni estado persistente: solo añaden ayuda contextual en la capa de presentación. En botones de decisión, el clic del activador detiene la propagación para que tocar exactamente un chip o icono de ayuda no elija la opción por accidente. Cuando una opción define probabilidades explícitas, el tooltip general resume porcentajes y riesgo; si no, indica que la decisión tiene efecto previsible. Los chips visibles de recursos se generan con `formatImpactChip`, `impactLevel`, `arrowMagnitude` y `formatResourceChipTooltip`: muestran solo dirección/magnitud con flechas y desplazan la explicación cualitativa al tooltip individual del chip.
 
 ## Cómo funciona el bucle del juego
 
@@ -118,6 +118,8 @@ defer: [{
   ]
 }]
 ```
+
+Las ramas de `outcomes` y `defer.branches` pueden declarar opcionalmente `tone: "success" | "mixed" | "failure"`. Este campo no es obligatorio para mantener compatibilidad con el catálogo existente: si falta, `game.js` infiere una lectura prudente a partir de los efectos netos, tratando `threat` como recurso inverso. Usar `tone` es preferible cuando la intención narrativa de una rama no se deduce bien de sus recursos.
 
 ## Cómo crear una cadena
 

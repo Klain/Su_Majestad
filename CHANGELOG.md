@@ -2,6 +2,18 @@
 
 Todas las versiones del proyecto deben usar formato semver y actualizar este archivo cuando haya cambios importantes.
 
+## v0.4.3 - 2026-07-04
+
+### Cambios realizados
+- Los chips de consecuencias de recursos pasan a mostrar solo dirección y magnitud con flechas: una para impacto mínimo, dos para moderado y tres para enorme.
+- Los tooltips individuales de chips explican los cambios de recursos en términos cualitativos, sin cifras exactas, e indican tendencia probable o resultado variable cuando hay ramas probabilísticas.
+- El tooltip general de cada decisión separa la lectura de riesgo: resume porcentajes de outcomes inmediatos, consecuencias futuras con `defer.branches`, memoria política e issues sin convertir la interfaz en una hoja de cálculo.
+- Se añade soporte opcional para `outcome.tone` (`success`, `mixed`, `failure`) y una inferencia prudente cuando el catálogo aún no lo define.
+- Se actualiza la versión a `v0.4.3`.
+
+### Correcciones
+- Se mantiene la protección de propagación en tooltips dentro de botones para evitar elecciones accidentales al tocar chips o el icono de ayuda.
+
 ## v0.4.2 - 2026-07-04
 
 ### Cambios realizados

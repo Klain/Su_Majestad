@@ -2,6 +2,21 @@
 
 Todas las versiones del proyecto deben usar formato semver y actualizar este archivo cuando haya cambios importantes.
 
+## v0.5.0 - 2026-07-04
+
+### Cambios realizados
+- Se sustituye el rasgo inicial plano por un árbol evolutivo de 3 tiers con ramas para oro, comida, ejército, pueblo, nobleza, fe y amenaza.
+- Se añade `traitPath`, `acquiredTraits`, `traitEvolutionChoices`, `traitEvolutionPending` y `traitEvolutionTier` al estado guardado.
+- Los efectos fijos de rasgo usan `onAcquire` y los efectos recurrentes usan `passive`; `applyTraitPassives()` aplica los pasivos una sola vez por cierre de día.
+- El día 10 ofrece evolución a Tier 2 y el día 20 evolución a Tier 3 según el último rasgo de la cadena.
+- La setup UI muestra tier, descripción y efecto al adquirir; la partida muestra la cadena de rasgos y una tarjeta propia de evolución.
+- Se migran partidas antiguas con `state.rulerTrait` a rasgos equivalentes del nuevo árbol.
+- Se actualiza la versión a `v0.5.0`.
+
+### Correcciones
+- La amenaza conserva polaridad inversa en chips y tooltips: bajar amenaza se presenta como favorable.
+- Se valida en arranque que no haya ids duplicados, evoluciones inexistentes ni relaciones de tier incorrectas.
+
 ## v0.4.3 - 2026-07-04
 
 ### Cambios realizados

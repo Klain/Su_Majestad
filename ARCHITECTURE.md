@@ -282,3 +282,48 @@ La capa roguelike vive en `game.js` y persiste `ambition`, `rulerTrait`, `active
 `game.js` mantiene `currentScreen` con cuatro valores: `menu`, `setup`, `game` y `ending`. `render()` sincroniza la clase `.hidden` en los contenedores de `index.html` y solo pinta la interfaz de partida cuando existe `state` y la pantalla activa es `game`.
 
 La pantalla `ending` usa el estado guardado para construir una crónica final: epílogo, ambición, rasgo inicial, causa de derrota, recursos, issues, decisiones recientes y consecuencias pendientes. Esto permite conservar el formato de guardado actual y evita modificar `EventManager`.
+
+## Árbol evolutivo de rasgos
+
+Desde `v0.5.0`, `rulerTraits` ya no describe solo ventajas iniciales pequeñas. Cada rasgo tiene `id`, `name`, `tier`, `tierName`, `family`, `description`, `onAcquire`, `passive`, `evolvesTo` y, salvo los Tier 1, `parentId`.
+
+### Estado persistente
+
+- `traitPath`: cadena ordenada de ids adquiridos durante el reinado. Ejemplo: `administrator -> tax_collector -> greater_tax_collector`.
+- `acquiredTraits`: lista compatible de ids activos; actualmente replica la cadena para facilitar futuras UI o consultas.
+- `traitEvolutionChoices`: ids disponibles cuando hay evolución pendiente.
+- `traitEvolutionPending`: bloquea el avance normal del consejo hasta elegir evolución.
+- `traitEvolutionTier`: tier objetivo de la evolución pendiente, `2` o `3`.
+- `lastTraitPassiveDay`: guardia para que los pasivos de rasgos no se apliquen dos veces en el mismo día.
+
+Las partidas antiguas pueden traer solo `state.rulerTrait`. `normalizeRoguelikeState()` llama a `migrateTraitState()` para mapear ids anteriores a líneas equivalentes: generoso a pueblo, militar a ejército, devoto a fe, ambicioso a nobleza, prudente a comida y mercantil a oro. Si el id no se reconoce, el fallback seguro es `administrator`.
+
+### Efectos de rasgo
+
+`onAcquire` representa un efecto fijo que se aplica exactamente una vez al obtener un rasgo, tanto al empezar una run como al evolucionar. Sustituye el antiguo concepto de `initial`, porque la adquisición ya no ocurre solo al inicio.
+
+`passive` representa efectos recurrentes que se aplican al cerrar cada día mediante `applyTraitPassives()`. Esta función recorre todos los ids de `traitPath` y aplica el pasivo de cada rasgo activo antes de crisis y edictos. La lógica vive separada de edictos para evitar mezclar sistemas.
+
+### Momentos de evolución
+
+Al cerrar el día 9, `endDay()` incrementa a día 10 y llama a `prepareTraitEvolution()`. Si el último rasgo tiene evoluciones Tier 2, se rellena `traitEvolutionChoices` y se muestra la tarjeta “Evolución del rasgo”. Al cerrar el día 19 ocurre lo mismo para Tier 3 al entrar en el día 20.
+
+La UI solo ofrece ids listados en `evolvesTo` del último rasgo de `traitPath`, de modo que no puede saltar a otra familia ni escoger una rama no relacionada. Mientras hay evolución pendiente, los eventos del consejo quedan deshabilitados y el botón de terminar día no puede avanzar.
+
+### Polaridad inversa de amenaza
+
+`threat` conserva la regla especial del resto del juego: bajar amenaza es positivo y subir amenaza es negativo. Los chips usan `resourceTone()` para mostrar `threat: -30` como favorable y `threat: +30` como problemático. Los tooltips añaden una frase explícita cuando la amenaza baja o sube.
+
+### Resumen del árbol
+
+| Familia | Tier 1 | Tier 2 | Tier 3 |
+| --- | --- | --- | --- |
+| Oro | Administrador | Tesorero Real / Recaudador / Mercader de Corte | Ministro del Tesoro, Casa de la Moneda, Recaudador Mayor, Hacienda de Hierro, Rey Mercader, Monopolios Reales |
+| Comida | Granero Real | Mayordomo de Graneros / Previsor / Racionador | Señor de los Silos, Red de Almacenes, Intendente General, Reino de la Abundancia, Mano de Invierno, Pan Controlado |
+| Ejército | Veterano | Capitán Real / Reclutador / Guardia de Palacio | Mariscal de la Corona, Academia Militar, Leva Permanente, Señor de la Guerra, Guardia Pretoriana, Reino Acuartelado |
+| Pueblo | Popular | Protector del Pueblo / Carismático / Benefactor | Padre del Pueblo, Consejo Vecinal, Voz de las Plazas, Corona Amada, Gran Benefactor, Pan y Fiesta |
+| Nobleza | Bien Nacido | Heredero de Linaje / Cortesano / Señor Feudal | Primero entre Pares, Corte Dorada, Canciller de Sangre, Pacto de Casas, Liga de Nobles, Trono Aristocrático |
+| Fe | Devoto | Peregrino Real / Ungido / Diezmo Piadoso | Santo Protector, Red de Monasterios, Voz del Altar, Elegido de Dios, Reino Sacro, Trono Teocrático |
+| Amenaza | Vigilante | Ojos en la Muralla / Implacable / Ley de Hierro | Red de Atalayas, Guardia de Caminos, Mano Dura, El Pacificador, Reino Ordenado, Paz Armada |
+
+`validateTraitTree()` se ejecuta al cargar `game.js` y comprueba ids duplicados, destinos de `evolvesTo`, ausencia de `parentId` en Tier 1 y coherencia padre-hijo entre Tier 1, Tier 2 y Tier 3.

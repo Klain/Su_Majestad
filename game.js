@@ -1,4 +1,4 @@
-const GAME_VERSION = "v0.4.3";
+const GAME_VERSION = "v0.5.0";
 const DEBUG_UI = false;
 const STORAGE_KEY = "su-majestad-save-v2";
 const LEGACY_STORAGE_KEY = "su-majestad-save-v1";
@@ -57,14 +57,93 @@ const ambitions = [
   { id: "noble", name: "Rey noble", description: "Mantén nobleza alta y evita insultos a casas nobles." }
 ];
 
+const TIER_NAMES = { 1: "Común", 2: "Raro", 3: "Legendario" };
+
 const rulerTraits = [
-  { id: "generous", name: "Generoso", effects: { people: 8, gold: -8 } },
-  { id: "military", name: "Militar", effects: { army: 8, faith: -6 } },
-  { id: "devout", name: "Devoto", effects: { faith: 8, gold: -6 } },
-  { id: "ambitious", name: "Ambicioso", effects: { nobility: 8, threat: 6 } },
-  { id: "prudent", name: "Prudente", effects: { food: 8, people: -6 } },
-  { id: "mercantile", name: "Mercantil", effects: { gold: 8, nobility: -6 } }
-];
+  { id: "administrator", name: "Administrador", tier: 1, family: "gold", description: "La corona conoce el peso de cada moneda.", onAcquire: { gold: 30 }, passive: {}, evolvesTo: ["royal_treasurer", "tax_collector", "court_merchant"] },
+  { id: "royal_treasurer", name: "Tesorero Real", tier: 2, family: "gold", parentId: "administrator", description: "Cada arca del palacio responde ante una sola llave.", onAcquire: { gold: 30 }, passive: {}, evolvesTo: ["treasury_minister", "royal_mint"] },
+  { id: "treasury_minister", name: "Ministro del Tesoro", tier: 3, family: "gold", parentId: "royal_treasurer", description: "El reino aprende a obedecer al libro mayor.", onAcquire: { gold: 45 }, passive: {}, evolvesTo: [] },
+  { id: "royal_mint", name: "Casa de la Moneda", tier: 3, family: "gold", parentId: "royal_treasurer", description: "La efigie real circula en cada mercado.", onAcquire: {}, passive: { gold: 3, people: -1 }, evolvesTo: [] },
+  { id: "tax_collector", name: "Recaudador", tier: 2, family: "gold", parentId: "administrator", description: "Ningún tributo queda fuera de la mirada real.", onAcquire: {}, passive: { gold: 2 }, evolvesTo: ["greater_tax_collector", "iron_treasury"] },
+  { id: "greater_tax_collector", name: "Recaudador Mayor", tier: 3, family: "gold", parentId: "tax_collector", description: "Hasta las piedras parecen deber impuestos.", onAcquire: {}, passive: { gold: 3, people: -1 }, evolvesTo: [] },
+  { id: "iron_treasury", name: "Hacienda de Hierro", tier: 3, family: "gold", parentId: "tax_collector", description: "La hacienda no negocia: cobra.", onAcquire: { gold: 60 }, passive: { nobility: -1 }, evolvesTo: [] },
+  { id: "court_merchant", name: "Mercader de Corte", tier: 2, family: "gold", parentId: "administrator", description: "La corte huele a especias, tinta y contratos.", onAcquire: { gold: 45 }, passive: { nobility: -1 }, evolvesTo: ["merchant_king", "royal_monopolies"] },
+  { id: "merchant_king", name: "Rey Mercader", tier: 3, family: "gold", parentId: "court_merchant", description: "El trono habla el idioma del beneficio.", onAcquire: { gold: 90 }, passive: { people: -1 }, evolvesTo: [] },
+  { id: "royal_monopolies", name: "Monopolios Reales", tier: 3, family: "gold", parentId: "court_merchant", description: "Todo gran negocio termina pagando a la corona.", onAcquire: {}, passive: { gold: 4, people: -2 }, evolvesTo: [] },
+  { id: "royal_granary", name: "Granero Real", tier: 1, family: "food", description: "El pan del mañana duerme bajo sello real.", onAcquire: { food: 30 }, passive: {}, evolvesTo: ["granary_steward", "foresighted", "rationer"] },
+  { id: "granary_steward", name: "Mayordomo de Graneros", tier: 2, family: "food", parentId: "royal_granary", description: "Cada saco tiene destino antes de ser cosechado.", onAcquire: { food: 30 }, passive: {}, evolvesTo: ["silo_lord", "warehouse_network"] },
+  { id: "silo_lord", name: "Señor de los Silos", tier: 3, family: "food", parentId: "granary_steward", description: "El hambre teme a tus almacenes.", onAcquire: { food: 45 }, passive: {}, evolvesTo: [] },
+  { id: "warehouse_network", name: "Red de Almacenes", tier: 3, family: "food", parentId: "granary_steward", description: "Carros y llaves unen las despensas del reino.", onAcquire: {}, passive: { food: 3, gold: -1 }, evolvesTo: [] },
+  { id: "foresighted", name: "Previsor", tier: 2, family: "food", parentId: "royal_granary", description: "La escasez se combate antes de tener nombre.", onAcquire: {}, passive: { food: 2 }, evolvesTo: ["general_intendant", "abundance_realm"] },
+  { id: "general_intendant", name: "Intendente General", tier: 3, family: "food", parentId: "foresighted", description: "La logística se convierte en ley silenciosa.", onAcquire: {}, passive: { food: 3, gold: -1 }, evolvesTo: [] },
+  { id: "abundance_realm", name: "Reino de la Abundancia", tier: 3, family: "food", parentId: "foresighted", description: "Las mesas llenas compran calma.", onAcquire: { food: 90 }, passive: { gold: -1 }, evolvesTo: [] },
+  { id: "rationer", name: "Racionador", tier: 2, family: "food", parentId: "royal_granary", description: "La justicia del pan se mide con cuchillo fino.", onAcquire: { food: 45 }, passive: { people: -1 }, evolvesTo: ["winter_hand", "controlled_bread"] },
+  { id: "winter_hand", name: "Mano de Invierno", tier: 3, family: "food", parentId: "rationer", description: "La corona guarda reservas aunque el pueblo murmure.", onAcquire: { food: 75 }, passive: { people: -1 }, evolvesTo: [] },
+  { id: "controlled_bread", name: "Pan Controlado", tier: 3, family: "food", parentId: "rationer", description: "Cada hogaza nace bajo norma real.", onAcquire: {}, passive: { food: 4, people: -2 }, evolvesTo: [] },
+  { id: "veteran", name: "Veterano", tier: 1, family: "army", description: "Tu mano recuerda el peso de la espada.", onAcquire: { army: 30 }, passive: {}, evolvesTo: ["royal_captain", "recruiter", "palace_guard"] },
+  { id: "royal_captain", name: "Capitán Real", tier: 2, family: "army", parentId: "veteran", description: "Los estandartes responden rápido a tu voz.", onAcquire: { army: 30 }, passive: {}, evolvesTo: ["crown_marshal", "military_academy"] },
+  { id: "crown_marshal", name: "Mariscal de la Corona", tier: 3, family: "army", parentId: "royal_captain", description: "El ejército marcha al ritmo del trono.", onAcquire: { army: 45 }, passive: {}, evolvesTo: [] },
+  { id: "military_academy", name: "Academia Militar", tier: 3, family: "army", parentId: "royal_captain", description: "La guerra se enseña antes de declararse.", onAcquire: {}, passive: { army: 3, gold: -1 }, evolvesTo: [] },
+  { id: "recruiter", name: "Reclutador", tier: 2, family: "army", parentId: "veteran", description: "Siempre hay otra lanza que levantar.", onAcquire: {}, passive: { army: 2 }, evolvesTo: ["permanent_levy", "warlord"] },
+  { id: "permanent_levy", name: "Leva Permanente", tier: 3, family: "army", parentId: "recruiter", description: "La vida civil aprende a marchar.", onAcquire: {}, passive: { army: 3, people: -1 }, evolvesTo: [] },
+  { id: "warlord", name: "Señor de la Guerra", tier: 3, family: "army", parentId: "recruiter", description: "La paz parece solo una pausa entre campañas.", onAcquire: { army: 90 }, passive: { gold: -1 }, evolvesTo: [] },
+  { id: "palace_guard", name: "Guardia de Palacio", tier: 2, family: "army", parentId: "veteran", description: "La seguridad del trono tiene rostro armado.", onAcquire: { army: 45 }, passive: { nobility: -1 }, evolvesTo: ["praetorian_guard", "barracked_realm"] },
+  { id: "praetorian_guard", name: "Guardia Pretoriana", tier: 3, family: "army", parentId: "palace_guard", description: "Los guardianes del rey también pesan en la política.", onAcquire: { army: 75 }, passive: { nobility: -1 }, evolvesTo: [] },
+  { id: "barracked_realm", name: "Reino Acuartelado", tier: 3, family: "army", parentId: "palace_guard", description: "El reino duerme junto a sus armas.", onAcquire: {}, passive: { army: 4, people: -2 }, evolvesTo: [] },
+  { id: "popular", name: "Popular", tier: 1, family: "people", description: "Tu nombre suena cálido en plazas y tabernas.", onAcquire: { people: 30 }, passive: {}, evolvesTo: ["people_protector", "charismatic", "benefactor"] },
+  { id: "people_protector", name: "Protector del Pueblo", tier: 2, family: "people", parentId: "popular", description: "La corona promete escuchar a los humildes.", onAcquire: { people: 30 }, passive: {}, evolvesTo: ["father_of_people", "neighborhood_council"] },
+  { id: "father_of_people", name: "Padre del Pueblo", tier: 3, family: "people", parentId: "people_protector", description: "La multitud ve familia donde otros ven poder.", onAcquire: { people: 45 }, passive: {}, evolvesTo: [] },
+  { id: "neighborhood_council", name: "Consejo Vecinal", tier: 3, family: "people", parentId: "people_protector", description: "La calle gana voz organizada.", onAcquire: {}, passive: { people: 3, gold: -1 }, evolvesTo: [] },
+  { id: "charismatic", name: "Carismático", tier: 2, family: "people", parentId: "popular", description: "Una palabra tuya calma más que un decreto.", onAcquire: {}, passive: { people: 2 }, evolvesTo: ["voice_of_squares", "beloved_crown"] },
+  { id: "voice_of_squares", name: "Voz de las Plazas", tier: 3, family: "people", parentId: "charismatic", description: "El rumor popular empieza a hablar en tu favor.", onAcquire: {}, passive: { people: 3, nobility: -1 }, evolvesTo: [] },
+  { id: "beloved_crown", name: "Corona Amada", tier: 3, family: "people", parentId: "charismatic", description: "El cariño del pueblo sostiene fiestas y perdones.", onAcquire: { people: 90 }, passive: { gold: -1 }, evolvesTo: [] },
+  { id: "benefactor", name: "Benefactor", tier: 2, family: "people", parentId: "popular", description: "La generosidad compra canciones y deudas.", onAcquire: { people: 45 }, passive: { gold: -1 }, evolvesTo: ["great_benefactor", "bread_and_festival"] },
+  { id: "great_benefactor", name: "Gran Benefactor", tier: 3, family: "people", parentId: "benefactor", description: "Tu largueza se convierte en leyenda viva.", onAcquire: { people: 75 }, passive: { gold: -1 }, evolvesTo: [] },
+  { id: "bread_and_festival", name: "Pan y Fiesta", tier: 3, family: "people", parentId: "benefactor", description: "La alegría pública devora despensas.", onAcquire: {}, passive: { people: 4, food: -2 }, evolvesTo: [] },
+  { id: "highborn", name: "Bien Nacido", tier: 1, family: "nobility", description: "Tu sangre abre puertas antes que tu palabra.", onAcquire: { nobility: 30 }, passive: {}, evolvesTo: ["lineage_heir", "courtier", "feudal_lord"] },
+  { id: "lineage_heir", name: "Heredero de Linaje", tier: 2, family: "nobility", parentId: "highborn", description: "Los árboles genealógicos se inclinan ante ti.", onAcquire: { nobility: 30 }, passive: {}, evolvesTo: ["first_among_peers", "golden_court"] },
+  { id: "first_among_peers", name: "Primero entre Pares", tier: 3, family: "nobility", parentId: "lineage_heir", description: "Los nobles discuten, pero reconocen tu primacía.", onAcquire: { nobility: 45 }, passive: {}, evolvesTo: [] },
+  { id: "golden_court", name: "Corte Dorada", tier: 3, family: "nobility", parentId: "lineage_heir", description: "El esplendor ata favores a precio de oro.", onAcquire: {}, passive: { nobility: 3, gold: -1 }, evolvesTo: [] },
+  { id: "courtier", name: "Cortesano", tier: 2, family: "nobility", parentId: "highborn", description: "Sabes cuándo sonreír y cuándo callar.", onAcquire: {}, passive: { nobility: 2 }, evolvesTo: ["blood_chancellor", "pact_of_houses"] },
+  { id: "blood_chancellor", name: "Canciller de Sangre", tier: 3, family: "nobility", parentId: "courtier", description: "La ley se escribe en tinta noble.", onAcquire: {}, passive: { nobility: 3, people: -1 }, evolvesTo: [] },
+  { id: "pact_of_houses", name: "Pacto de Casas", tier: 3, family: "nobility", parentId: "courtier", description: "Las grandes familias atan sus destinos al trono.", onAcquire: { nobility: 90 }, passive: { gold: -1 }, evolvesTo: [] },
+  { id: "feudal_lord", name: "Señor Feudal", tier: 2, family: "nobility", parentId: "highborn", description: "La tierra habla por boca de sus señores.", onAcquire: { nobility: 45 }, passive: { people: -1 }, evolvesTo: ["league_of_nobles", "aristocratic_throne"] },
+  { id: "league_of_nobles", name: "Liga de Nobles", tier: 3, family: "nobility", parentId: "feudal_lord", description: "Un pacto aristocrático sostiene y limita tu poder.", onAcquire: { nobility: 75 }, passive: { people: -1 }, evolvesTo: [] },
+  { id: "aristocratic_throne", name: "Trono Aristocrático", tier: 3, family: "nobility", parentId: "feudal_lord", description: "La corona y la nobleza se confunden en una sola voz.", onAcquire: {}, passive: { nobility: 4, people: -2 }, evolvesTo: [] },
+  { id: "devout", name: "Devoto", tier: 1, family: "faith", description: "Tu corona se inclina ante lo sagrado.", onAcquire: { faith: 30 }, passive: {}, evolvesTo: ["royal_pilgrim", "anointed", "pious_tithe"] },
+  { id: "royal_pilgrim", name: "Peregrino Real", tier: 2, family: "faith", parentId: "devout", description: "Tu piedad camina por caminos polvorientos.", onAcquire: { faith: 30 }, passive: {}, evolvesTo: ["holy_protector", "monastery_network"] },
+  { id: "holy_protector", name: "Santo Protector", tier: 3, family: "faith", parentId: "royal_pilgrim", description: "El pueblo ve amparo divino en tus actos.", onAcquire: { faith: 45 }, passive: {}, evolvesTo: [] },
+  { id: "monastery_network", name: "Red de Monasterios", tier: 3, family: "faith", parentId: "royal_pilgrim", description: "Claustros y caminos llevan ayuda y doctrina.", onAcquire: {}, passive: { faith: 3, gold: -1 }, evolvesTo: [] },
+  { id: "anointed", name: "Ungido", tier: 2, family: "faith", parentId: "devout", description: "La legitimidad baja del altar al trono.", onAcquire: {}, passive: { faith: 2 }, evolvesTo: ["altar_voice", "chosen_by_god"] },
+  { id: "altar_voice", name: "Voz del Altar", tier: 3, family: "faith", parentId: "anointed", description: "Los sermones pronuncian tu causa.", onAcquire: {}, passive: { faith: 3, nobility: -1 }, evolvesTo: [] },
+  { id: "chosen_by_god", name: "Elegido de Dios", tier: 3, family: "faith", parentId: "anointed", description: "Dudar del rey empieza a parecer sacrilegio.", onAcquire: { faith: 90 }, passive: { nobility: -1 }, evolvesTo: [] },
+  { id: "pious_tithe", name: "Diezmo Piadoso", tier: 2, family: "faith", parentId: "devout", description: "La fe se alimenta de monedas y paciencia.", onAcquire: { faith: 45 }, passive: { people: -1 }, evolvesTo: ["sacred_realm", "theocratic_throne"] },
+  { id: "sacred_realm", name: "Reino Sacro", tier: 3, family: "faith", parentId: "pious_tithe", description: "La frontera entre ley y liturgia se estrecha.", onAcquire: { faith: 75 }, passive: { people: -1 }, evolvesTo: [] },
+  { id: "theocratic_throne", name: "Trono Teocrático", tier: 3, family: "faith", parentId: "pious_tithe", description: "Gobernar se vuelve un acto de doctrina.", onAcquire: {}, passive: { faith: 4, nobility: -2 }, evolvesTo: [] },
+  { id: "vigilant", name: "Vigilante", tier: 1, family: "threat", description: "Tus ojos buscan grietas antes de que sean heridas.", onAcquire: { threat: -30 }, passive: {}, evolvesTo: ["wall_eyes", "relentless", "iron_law"] },
+  { id: "wall_eyes", name: "Ojos en la Muralla", tier: 2, family: "threat", parentId: "vigilant", description: "Nada cruza las almenas sin dejar rastro.", onAcquire: { threat: -30 }, passive: {}, evolvesTo: ["watchtower_network", "road_guard"] },
+  { id: "watchtower_network", name: "Red de Atalayas", tier: 3, family: "threat", parentId: "wall_eyes", description: "Las hogueras avisan antes que el peligro llegue.", onAcquire: { threat: -45 }, passive: {}, evolvesTo: [] },
+  { id: "road_guard", name: "Guardia de Caminos", tier: 3, family: "threat", parentId: "wall_eyes", description: "La seguridad viaja con cada caravana.", onAcquire: {}, passive: { threat: -3, gold: -1 }, evolvesTo: [] },
+  { id: "relentless", name: "Implacable", tier: 2, family: "threat", parentId: "vigilant", description: "El desorden no recibe segundas oportunidades.", onAcquire: {}, passive: { threat: -2 }, evolvesTo: ["hard_hand", "peacemaker"] },
+  { id: "hard_hand", name: "Mano Dura", tier: 3, family: "threat", parentId: "relentless", description: "La calma llega con botas pesadas.", onAcquire: {}, passive: { threat: -3, people: -1 }, evolvesTo: [] },
+  { id: "peacemaker", name: "El Pacificador", tier: 3, family: "threat", parentId: "relentless", description: "La amenaza retrocede ante una voluntad férrea.", onAcquire: { threat: -90 }, passive: { army: -1 }, evolvesTo: [] },
+  { id: "iron_law", name: "Ley de Hierro", tier: 2, family: "threat", parentId: "vigilant", description: "La norma pesa más que cualquier excusa.", onAcquire: { threat: -45 }, passive: { people: -1 }, evolvesTo: ["ordered_realm", "armed_peace"] },
+  { id: "ordered_realm", name: "Reino Ordenado", tier: 3, family: "threat", parentId: "iron_law", description: "La paz pública se administra con disciplina.", onAcquire: { threat: -75 }, passive: { people: -1 }, evolvesTo: [] },
+  { id: "armed_peace", name: "Paz Armada", tier: 3, family: "threat", parentId: "iron_law", description: "El silencio del reino descansa sobre lanzas visibles.", onAcquire: {}, passive: { threat: -4, army: -2 }, evolvesTo: [] }
+].map((trait) => ({ tierName: TIER_NAMES[trait.tier], onAcquire: {}, passive: {}, evolvesTo: [], ...trait }));
+
+const legacyTraitMap = {
+  generous: "popular",
+  military: "veteran",
+  devout: "devout",
+  ambitious: "highborn",
+  prudent: "royal_granary",
+  mercantile: "administrator"
+};
+
+const rulerTraitsById = Object.fromEntries(rulerTraits.map((trait) => [trait.id, trait]));
+const tierOneTraits = rulerTraits.filter((trait) => trait.tier === 1);
+validateTraitTree();
 
 const crises = [
   { id: "drought", name: "Sequía", description: "La comida se agota más rápido.", duration: 4, families: ["food", "shortage", "people"], daily: { food: -2 } },
@@ -91,10 +170,10 @@ let currentScreen = "menu";
 let setupOptions = { traits: [], ambitions: [], selectedTrait: null, selectedAmbition: null };
 
 function newGame(selection = {}) {
-  const trait = selection.trait || pickRandom(rulerTraits);
+  const trait = selection.trait || pickRandom(tierOneTraits);
   const ambition = selection.ambition || pickRandom(ambitions);
   const resources = { ...startingResources };
-  applyResourceDelta(resources, trait.effects);
+  applyResourceDelta(resources, trait.onAcquire);
   state = eventManager.normalizeState({
     day: 1,
     resources,
@@ -105,6 +184,12 @@ function newGame(selection = {}) {
     lastResult: null,
     ambition,
     rulerTrait: trait,
+    traitPath: [trait.id],
+    acquiredTraits: [trait.id],
+    traitEvolutionChoices: [],
+    traitEvolutionPending: false,
+    traitEvolutionTier: null,
+    lastTraitPassiveDay: null,
     activeCrisis: null,
     activeEdicts: [],
     edictChoices: [],
@@ -129,7 +214,7 @@ function pickMany(items, amount) { return [...items].sort(() => Math.random() - 
 function applyResourceDelta(resources, effects = {}) { Object.entries(effects).forEach(([key, value]) => { if (resources[key] !== undefined) resources[key] = clamp(resources[key] + value); }); }
 
 function applyChoice(eventIndex, optionIndex) {
-  if (state.gameOver || state.resolved.includes(eventIndex)) return;
+  if (state.gameOver || state.traitEvolutionPending || state.resolved.includes(eventIndex)) return;
   const currentEvent = state.todaysEvents[eventIndex];
   const choice = currentEvent.options[optionIndex];
   eventManager.applyChoice(state, currentEvent, choice);
@@ -149,6 +234,7 @@ function endDay() {
     state.outcome = "win";
     state.epilogue = buildEpilogue();
   } else {
+    prepareTraitEvolution();
     prepareSeasonalCrisis();
     prepareEdictOffer();
     state.lastResult = null;
@@ -189,6 +275,7 @@ function render() {
   document.querySelectorAll("#gameVersion, #gameVersionGame").forEach((node) => { node.textContent = GAME_VERSION; });
   renderMenu();
   renderSetup();
+  if (currentScreen === "setup") initTooltips();
   if (state?.gameOver && currentScreen !== "ending") currentScreen = "ending";
   syncScreens();
   if (currentScreen === "ending") return renderEnding();
@@ -197,23 +284,57 @@ function render() {
   document.getElementById("dayProgress").style.width = `${(Math.min(state.day, MAX_DAYS) / MAX_DAYS) * 100}%`;
   renderResources();
   renderReign();
+  renderTraitEvolution();
   renderEvents();
   renderMemory();
   renderIssues();
   renderEdictOffer();
   renderMessage();
   initTooltips();
-  document.getElementById("endDayButton").disabled = state.gameOver || state.resolved.length < EVENTS_PER_DAY;
+  document.getElementById("endDayButton").disabled = state.gameOver || state.traitEvolutionPending || state.resolved.length < EVENTS_PER_DAY;
 }
 
 function normalizeRoguelikeState(saved) {
   saved.ambition = ambitions.find((item) => item.id === saved.ambition?.id) || saved.ambition || pickRandom(ambitions);
-  saved.rulerTrait = rulerTraits.find((item) => item.id === saved.rulerTrait?.id) || saved.rulerTrait || pickRandom(rulerTraits);
+  migrateTraitState(saved);
   saved.activeCrisis = saved.activeCrisis?.id ? { ...crises.find((item) => item.id === saved.activeCrisis.id), ...saved.activeCrisis } : null;
   saved.activeEdicts = Array.isArray(saved.activeEdicts) ? saved.activeEdicts.map((edict) => ({ ...edicts.find((item) => item.id === edict.id), ...edict })).filter((edict) => edict.id) : [];
   saved.edictChoices = Array.isArray(saved.edictChoices) ? saved.edictChoices : [];
   saved.completedObjectives = { issuesResolved: 0, ...(saved.completedObjectives || {}) };
   return saved;
+}
+
+function migrateTraitState(saved) {
+  const legacyId = saved.rulerTrait?.id || saved.rulerTrait;
+  const mappedId = rulerTraitsById[legacyId]?.id || legacyTraitMap[legacyId] || "administrator";
+  const existingPath = Array.isArray(saved.traitPath) ? saved.traitPath.filter((id) => rulerTraitsById[id]) : [];
+  saved.traitPath = existingPath.length ? existingPath : [mappedId];
+  saved.acquiredTraits = Array.isArray(saved.acquiredTraits) ? saved.acquiredTraits.filter((id) => rulerTraitsById[id]) : [...saved.traitPath];
+  saved.traitEvolutionChoices = Array.isArray(saved.traitEvolutionChoices) ? saved.traitEvolutionChoices.filter((id) => rulerTraitsById[id]) : [];
+  saved.traitEvolutionPending = Boolean(saved.traitEvolutionPending && saved.traitEvolutionChoices.length);
+  saved.traitEvolutionTier = saved.traitEvolutionPending ? (saved.traitEvolutionTier || rulerTraitsById[saved.traitEvolutionChoices[0]]?.tier || null) : null;
+  saved.lastTraitPassiveDay = Number.isInteger(saved.lastTraitPassiveDay) ? saved.lastTraitPassiveDay : null;
+  saved.rulerTrait = rulerTraitsById[saved.traitPath[0]] || rulerTraitsById.administrator;
+}
+
+function validateTraitTree() {
+  const ids = new Set();
+  rulerTraits.forEach((trait) => {
+    if (ids.has(trait.id)) throw new Error(`Rasgo duplicado: ${trait.id}`);
+    ids.add(trait.id);
+  });
+  rulerTraits.forEach((trait) => {
+    if (trait.tier === 1 && trait.parentId) throw new Error(`Tier 1 con parentId: ${trait.id}`);
+    if (trait.tier > 1) {
+      const parent = rulerTraitsById?.[trait.parentId] || rulerTraits.find((item) => item.id === trait.parentId);
+      if (!parent || parent.tier !== trait.tier - 1) throw new Error(`Parent inválido para ${trait.id}`);
+    }
+    (trait.evolvesTo || []).forEach((childId) => {
+      const child = rulerTraits.find((item) => item.id === childId);
+      if (!child) throw new Error(`Evolución inexistente: ${trait.id} -> ${childId}`);
+      if (child.parentId !== trait.id || child.tier !== trait.tier + 1) throw new Error(`Evolución fuera de árbol: ${trait.id} -> ${childId}`);
+    });
+  });
 }
 
 function renderResources() {
@@ -228,7 +349,7 @@ function renderResources() {
 function renderEvents() {
   if (currentScreen !== "game" || !state) return;
   document.getElementById("events").innerHTML = state.todaysEvents.map((item, eventIndex) => {
-    const resolved = state.resolved.includes(eventIndex) || state.gameOver;
+    const resolved = state.resolved.includes(eventIndex) || state.gameOver || state.traitEvolutionPending;
     const options = item.options.map((option, optionIndex) => `<button class="option-button" type="button" ${resolved ? "disabled" : ""} data-event="${eventIndex}" data-option="${optionIndex}"><span class="option-title"><span>${option.label}</span>${tooltip("ⓘ", formatChoiceTooltip(option), "icon option-help")}</span><span class="effects chips" aria-label="Consecuencias previstas">${formatChoicePreview(option)}</span></button>`).join("");
     return `<article class="event-card ${resolved ? "resolved" : ""}"><h3 class="event-title">${item.title}</h3><p class="event-text">${item.text}</p><div class="options">${options}</div></article>`;
   }).join("");
@@ -244,7 +365,60 @@ function renderReign() {
   if (!panel) return;
   const crisis = state.activeCrisis?.remainingDays > 0 ? tooltip(`${state.activeCrisis.name} (${state.activeCrisis.remainingDays}d)`, formatCrisisTooltip(state.activeCrisis)) : "Sin crisis";
   const edict = state.activeEdicts?.length ? state.activeEdicts.map((item) => tooltip(item.name, formatEdictTooltip(item))).join(" · ") : "Sin edicto";
-  panel.innerHTML = `<div class="reign-grid"><span><strong>${tooltip("Rasgo", tooltipTexts.reign.trait)}</strong>${tooltip(state.rulerTrait.name, formatTraitTooltip(state.rulerTrait))}</span><span><strong>${tooltip("Ambición", tooltipTexts.reign.ambition)}</strong>${tooltip(state.ambition.name, state.ambition.description)}</span><span><strong>${tooltip("Crisis", tooltipTexts.reign.crisis)}</strong>${crisis}</span><span><strong>${tooltip("Edicto", tooltipTexts.reign.edict)}</strong>${edict}</span></div>`;
+  const chain = formatTraitChain();
+  panel.innerHTML = `<div class="reign-grid"><span><strong>${tooltip("Rasgo", tooltipTexts.reign.trait)}</strong>${tooltip(chain, formatTraitPathTooltip())}</span><span><strong>${tooltip("Ambición", tooltipTexts.reign.ambition)}</strong>${tooltip(state.ambition.name, state.ambition.description)}</span><span><strong>${tooltip("Crisis", tooltipTexts.reign.crisis)}</strong>${crisis}</span><span><strong>${tooltip("Edicto", tooltipTexts.reign.edict)}</strong>${edict}</span></div>`;
+}
+
+function renderTraitEvolution() {
+  if (currentScreen !== "game" || !state) return;
+  const panel = document.getElementById("traitEvolution");
+  if (!panel) return;
+  if (!state.traitEvolutionPending || !state.traitEvolutionChoices?.length || state.gameOver) {
+    panel.className = "trait-evolution hidden";
+    panel.innerHTML = "";
+    return;
+  }
+  panel.className = "trait-evolution";
+  panel.innerHTML = `<strong>Evolución del rasgo</strong><p>Elige una mejora ${TIER_NAMES[state.traitEvolutionTier] || ""} para continuar la cadena de tu reinado.</p><div class="trait-evolution-options">${state.traitEvolutionChoices.map((id) => renderEvolutionChoice(rulerTraitsById[id])).join("")}</div>`;
+  panel.querySelectorAll("[data-evolve-trait]").forEach((button) => button.addEventListener("click", () => chooseTraitEvolution(button.dataset.evolveTrait)));
+}
+
+function renderEvolutionChoice(trait) {
+  if (!trait) return "";
+  const acquire = formatEffectsText(trait.onAcquire) || "Sin efecto inmediato";
+  const passive = formatEffectsText(trait.passive) || "Sin pasivo";
+  return `<button class="trait-evolution-button" type="button" data-evolve-trait="${trait.id}"><span class="trait-tier">${trait.tierName}</span><strong>${trait.name}</strong><small>${trait.description}</small><span class="effects">${formatEffectChips(trait.onAcquire).map(chipToHtml).join("") || "Al adquirir: —"}</span><span class="trait-detail">${tooltip("Al adquirir", acquire)} · ${tooltip("Pasivo por turno", passive)}</span></button>`;
+}
+
+function chooseTraitEvolution(traitId) {
+  const lastTrait = getLastTrait();
+  const trait = rulerTraitsById[traitId];
+  if (!state.traitEvolutionPending || !trait || !(lastTrait?.evolvesTo || []).includes(trait.id)) return;
+  applyResourceDelta(state.resources, trait.onAcquire);
+  state.traitPath.push(trait.id);
+  state.acquiredTraits = [...state.traitPath];
+  state.traitEvolutionChoices = [];
+  state.traitEvolutionPending = false;
+  state.traitEvolutionTier = null;
+  state.lastResult = { resultText: `Tu rasgo evoluciona: ${formatTraitChain()}.` };
+  checkOutcome();
+  save();
+  render();
+}
+
+function prepareTraitEvolution() {
+  if (![10, 20].includes(state.day) || state.traitEvolutionPending) return;
+  const lastTrait = getLastTrait();
+  const targetTier = state.day === 10 ? 2 : 3;
+  const choices = (lastTrait?.evolvesTo || []).filter((id) => rulerTraitsById[id]?.tier === targetTier);
+  if (!choices.length) return;
+  state.traitEvolutionChoices = choices;
+  state.traitEvolutionPending = true;
+  state.traitEvolutionTier = targetTier;
+}
+
+function getLastTrait() {
+  return rulerTraitsById[state.traitPath?.[state.traitPath.length - 1]];
 }
 
 function renderEdictOffer() {
@@ -279,6 +453,7 @@ function prepareEdictOffer() {
 }
 
 function applyDailyRoguelikeSystems() {
+  applyTraitPassives();
   if (state.activeCrisis?.remainingDays > 0) {
     applyResourceDelta(state.resources, state.activeCrisis.daily);
     state.activeCrisis.remainingDays -= 1;
@@ -288,6 +463,15 @@ function applyDailyRoguelikeSystems() {
     if (edict.every && state.day % edict.every === 0) applyResourceDelta(state.resources, edict.cost);
   });
   checkOutcome();
+}
+
+function applyTraitPassives() {
+  if (state.lastTraitPassiveDay === state.day) return;
+  (state.traitPath || []).forEach((traitId) => {
+    const trait = rulerTraitsById[traitId];
+    if (trait?.passive) applyResourceDelta(state.resources, trait.passive);
+  });
+  state.lastTraitPassiveDay = state.day;
 }
 
 function renderIssues() {
@@ -579,7 +763,20 @@ function inferOutcomeTone(outcome = {}) {
 }
 
 function formatTraitTooltip(trait) {
-  return `Rasgo inicial: ${formatEffectsText(trait.effects)}.`;
+  const acquire = formatEffectsText(trait.onAcquire);
+  const passive = formatEffectsText(trait.passive);
+  return `${trait.tierName || `Tier ${trait.tier}`}: ${trait.description}${acquire ? ` Al adquirir: ${acquire}.` : ""}${passive ? ` Pasivo por turno: ${passive}.` : ""}`;
+}
+
+function formatTraitChain() {
+  const names = (state.traitPath || []).map((id) => rulerTraitsById[id]?.name).filter(Boolean);
+  const lastTrait = getLastTrait();
+  if ((lastTrait?.evolvesTo || []).length && names.length < 3) names.push("pendiente");
+  return names.join(" → ") || "Sin rasgo";
+}
+
+function formatTraitPathTooltip() {
+  return (state.traitPath || []).map((id) => formatTraitTooltip(rulerTraitsById[id])).join(" ");
 }
 
 function formatCrisisTooltip(crisis) {
@@ -622,6 +819,10 @@ function formatImpactChip(key, value, context = {}) {
     tone: resourceTone(key, value),
     tooltipText: formatResourceChipTooltip(key, value, context)
   };
+}
+
+function chipToHtml({ icon, text, tone = "", tooltipText = null }) {
+  return tooltip(`${icon} ${text}`, tooltipText || tooltipTextForChip(tone, text), `effect-chip ${tone}`);
 }
 
 function impactLevel(value) {
@@ -822,17 +1023,17 @@ function renderMenu() {
   document.getElementById("deleteSaveButton").classList.toggle("hidden", !hasSave);
 }
 function openSetup() {
-  setupOptions = { traits: pickMany(rulerTraits, 3), ambitions: pickMany(ambitions, 3), selectedTrait: null, selectedAmbition: null };
+  setupOptions = { traits: pickMany(tierOneTraits, 3), ambitions: pickMany(ambitions, 3), selectedTrait: null, selectedAmbition: null };
   setScreen("setup");
 }
 function renderSetup() {
   const traitBox = document.getElementById("traitChoices");
   const ambitionBox = document.getElementById("ambitionChoices");
   if (!traitBox || !ambitionBox) return;
-  traitBox.innerHTML = setupOptions.traits.map((trait) => `<button class="choice-card ${setupOptions.selectedTrait?.id === trait.id ? "selected" : ""}" type="button" data-trait="${trait.id}"><strong>${trait.name}</strong><span>${formatEffectsText(trait.effects)}</span></button>`).join("");
+  traitBox.innerHTML = setupOptions.traits.map((trait) => `<button class="choice-card ${setupOptions.selectedTrait?.id === trait.id ? "selected" : ""}" type="button" data-trait="${trait.id}"><span class="trait-tier">${trait.tierName}</span><strong>${trait.name}</strong><span>${trait.description}</span><span>${tooltip("Al adquirir", formatEffectsText(trait.onAcquire) || "Sin efecto inmediato")}</span></button>`).join("");
   ambitionBox.innerHTML = setupOptions.ambitions.map((ambition) => `<button class="choice-card ${setupOptions.selectedAmbition?.id === ambition.id ? "selected" : ""}" type="button" data-ambition="${ambition.id}"><strong>${ambition.name}</strong><span>${ambition.description}</span></button>`).join("");
   document.getElementById("startRunButton").disabled = !setupOptions.selectedTrait || !setupOptions.selectedAmbition;
-  traitBox.querySelectorAll("[data-trait]").forEach((button) => button.addEventListener("click", () => { setupOptions.selectedTrait = rulerTraits.find((item) => item.id === button.dataset.trait); renderSetup(); }));
+  traitBox.querySelectorAll("[data-trait]").forEach((button) => button.addEventListener("click", () => { setupOptions.selectedTrait = tierOneTraits.find((item) => item.id === button.dataset.trait); renderSetup(); }));
   ambitionBox.querySelectorAll("[data-ambition]").forEach((button) => button.addEventListener("click", () => { setupOptions.selectedAmbition = ambitions.find((item) => item.id === button.dataset.ambition); renderSetup(); }));
 }
 function formatEffectsText(effects = {}) { return Object.entries(effects).map(([key, value]) => `${resourceMeta[key]?.[0] || key} ${value > 0 ? "+" : ""}${value}`).join(" · "); }
@@ -853,7 +1054,7 @@ function renderEnding() {
   const history = (state.history || []).slice(-3).reverse();
   const pending = state.pendingEvents || [];
   card.className = `ending-card ${won ? "win" : "lose"}`;
-  card.innerHTML = `<p class="eyebrow">${won ? "Victoria" : "Derrota"}</p><h2>${epilogue.title}</h2><p>${won ? "La corte recordará este gobierno como una historia cerrada." : `Tu reinado cayó en el día ${state.day}. La corte recordará este gobierno como una advertencia.`}</p><p>${epilogue.text}</p><div class="run-summary"><strong>Ambición:</strong> ${state.ambition.name} — ${epilogue.ambitionWon ? "cumplida" : "La ambición quedó incompleta."}<br><strong>Rasgo inicial:</strong> ${state.rulerTrait.name}<br><strong>Día alcanzado:</strong> ${Math.min(state.day, MAX_DAYS)}</div>${won ? "" : `<p class="death-cause">Causa de derrota: ${getDeathCause()}</p>`}<div class="run-summary"><strong>Recursos finales:</strong> ${Object.entries(resourceMeta).map(([key,[name]]) => `${name} ${state.resources[key]}`).join(" · ")}<br><strong>Issues resueltos:</strong> ${state.completedObjectives?.issuesResolved || 0}<br><strong>Issues activos restantes:</strong> ${(state.issues || []).length}</div><h3>Últimas decisiones importantes</h3><ul class="chronicle-list">${history.length ? history.map((item) => `<li>Día ${item.day}: ${item.choice} (${item.eventTitle})</li>`).join("") : "<li>La crónica quedó casi en blanco.</li>"}</ul>${pending.length ? `<p>Aún quedaban consecuencias pendientes.</p><ul class="chronicle-list">${pending.map((item) => `<li>Día ${item.dueDay || "?"}: ${item.eventId || item.id || "consecuencia"}</li>`).join("")}</ul>` : ""}<details><summary>Ver crónica</summary><ul class="chronicle-list">${(state.history || []).map((item) => `<li>Día ${item.day}: ${item.choice} (${item.eventTitle})${item.resultText ? ` — ${item.resultText}` : ""}</li>`).join("") || "<li>Sin decisiones registradas.</li>"}</ul></details><div class="setup-actions"><button id="endingNewRunButton" class="primary-button" type="button">Nuevo reinado</button><button id="endingMenuButton" class="secondary-button" type="button">Volver al menú</button><button id="copySummaryButton" class="secondary-button" type="button">Copiar resumen</button></div>`;
+  card.innerHTML = `<p class="eyebrow">${won ? "Victoria" : "Derrota"}</p><h2>${epilogue.title}</h2><p>${won ? "La corte recordará este gobierno como una historia cerrada." : `Tu reinado cayó en el día ${state.day}. La corte recordará este gobierno como una advertencia.`}</p><p>${epilogue.text}</p><div class="run-summary"><strong>Ambición:</strong> ${state.ambition.name} — ${epilogue.ambitionWon ? "cumplida" : "La ambición quedó incompleta."}<br><strong>Rasgos:</strong> ${formatTraitChain()}<br><strong>Día alcanzado:</strong> ${Math.min(state.day, MAX_DAYS)}</div>${won ? "" : `<p class="death-cause">Causa de derrota: ${getDeathCause()}</p>`}<div class="run-summary"><strong>Recursos finales:</strong> ${Object.entries(resourceMeta).map(([key,[name]]) => `${name} ${state.resources[key]}`).join(" · ")}<br><strong>Issues resueltos:</strong> ${state.completedObjectives?.issuesResolved || 0}<br><strong>Issues activos restantes:</strong> ${(state.issues || []).length}</div><h3>Últimas decisiones importantes</h3><ul class="chronicle-list">${history.length ? history.map((item) => `<li>Día ${item.day}: ${item.choice} (${item.eventTitle})</li>`).join("") : "<li>La crónica quedó casi en blanco.</li>"}</ul>${pending.length ? `<p>Aún quedaban consecuencias pendientes.</p><ul class="chronicle-list">${pending.map((item) => `<li>Día ${item.dueDay || "?"}: ${item.eventId || item.id || "consecuencia"}</li>`).join("")}</ul>` : ""}<details><summary>Ver crónica</summary><ul class="chronicle-list">${(state.history || []).map((item) => `<li>Día ${item.day}: ${item.choice} (${item.eventTitle})${item.resultText ? ` — ${item.resultText}` : ""}</li>`).join("") || "<li>Sin decisiones registradas.</li>"}</ul></details><div class="setup-actions"><button id="endingNewRunButton" class="primary-button" type="button">Nuevo reinado</button><button id="endingMenuButton" class="secondary-button" type="button">Volver al menú</button><button id="copySummaryButton" class="secondary-button" type="button">Copiar resumen</button></div>`;
   document.getElementById("endingNewRunButton").addEventListener("click", openSetup);
   document.getElementById("endingMenuButton").addEventListener("click", () => setScreen("menu"));
   document.getElementById("copySummaryButton").addEventListener("click", copyChronicle);

@@ -1,6 +1,6 @@
 # Su Majestad
 
-**Versión actual:** `v0.4.0`
+**Versión actual:** `v0.5.0`
 
 `Su Majestad` es un roguelike de gestión de reino para móvil y escritorio, creado con HTML, CSS y JavaScript puro. La partida dura 30 días y cada jornada presenta asuntos del consejo que pueden cambiar recursos, abrir conflictos, recordar personajes o provocar consecuencias futuras.
 
@@ -24,12 +24,13 @@ El objetivo no es solo optimizar barras: tus decisiones dejan memoria narrativa 
 
 1. Abre `index.html` en un navegador móvil o de escritorio.
 2. Desde el menú principal, continúa una partida guardada o crea un nuevo reinado.
-3. En nueva partida, elige 1 rasgo del monarca y 1 ambición entre 3 opciones aleatorias.
-4. Cada partida dura 30 días.
-5. Cada día aparecen 2 eventos del consejo.
-6. Elige una opción por evento.
-7. Pulsa **Terminar día** cuando hayas resuelto los 2 asuntos.
-8. Sobrevive hasta completar el día 30 para ganar y revisa la pantalla final de crónica.
+3. En nueva partida, elige 1 rasgo común del monarca y 1 ambición entre 3 opciones aleatorias.
+4. Al comenzar el día 10 y el día 20, elige una evolución relacionada para ampliar la cadena de rasgos del reinado.
+5. Cada partida dura 30 días.
+6. Cada día aparecen 2 eventos del consejo.
+7. Elige una opción por evento.
+8. Pulsa **Terminar día** cuando hayas resuelto los 2 asuntos.
+9. Sobrevive hasta completar el día 30 para ganar y revisa la pantalla final de crónica.
 
 Pierdes si oro, comida, ejército, pueblo, nobleza o fe llegan a 0. También pierdes si amenaza llega a 100.
 
@@ -44,7 +45,7 @@ Pierdes si oro, comida, ejército, pueblo, nobleza o fe llegan a 0. También pie
 - Catálogo modular con decisiones inmediatas, etiquetas, personajes recurrentes y consecuencias futuras.
 - Memoria persistente del reino: historial, etiquetas, personajes recurrentes y eventos pendientes.
 - Guardado automático con `localStorage`.
-- Sistemas roguelike ligeros: rasgo inicial, ambición de reinado, crisis de temporada, edictos y epílogo narrativo.
+- Sistemas roguelike ligeros: árbol evolutivo de rasgos, ambición de reinado, crisis de temporada, edictos y epílogo narrativo.
 - Menú con continuar reinado, nuevo reinado y borrado de guardado.
 - Pantalla final con victoria/derrota, causa de caída, recursos, issues, decisiones recientes y crónica desplegable.
 - Sin dependencias y sin build step.

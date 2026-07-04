@@ -97,7 +97,8 @@ h2 { margin: 0; }
 }
 .option-button:not(:disabled):active { transform: scale(0.99); }
 .option-button:disabled { background: rgba(59, 42, 79, 0.58); }
-.option-title { display: block; line-height: 1.22; }
+.option-title { align-items: start; display: flex; gap: 0.4rem; justify-content: space-between; line-height: 1.22; }
+.option-help { flex: 0 0 auto; margin-top: -0.2rem; }
 .effects { color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px; font-size: 0.78rem; font-weight: 800; }
 .effect-chip {
   align-items: center;

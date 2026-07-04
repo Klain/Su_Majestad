@@ -23,11 +23,11 @@ El proyecto sigue sin usar dependencias externas ni paso de build. Por eso los m
 
 ## Tooltips accesibles
 
-`game.js` define `tooltipTexts` como diccionario de textos para recursos, Reinado, Issues activos y chips de consecuencias. El helper `tooltip(label, text, className)` devuelve un activador con `data-tooltip`, `aria-label`, foco de teclado y clase `tooltip-trigger`.
+`game.js` define `tooltipTexts` como diccionario de textos para recursos, Reinado, Issues activos y chips de consecuencias. El helper `tooltip(label, text, className)` devuelve un activador con `data-tooltip`, `aria-label`, foco de teclado y clase `tooltip-trigger`. Además, helpers como `formatChoiceTooltip`, `formatTraitTooltip`, `formatCrisisTooltip` y `formatEdictTooltip` generan ayuda contextual para valores concretos y decisiones del consejo.
 
 Después de renderizar la pantalla de partida, `render()` llama a `initTooltips()`. Esta función registra interacciones de ratón, foco y toque sobre los activadores, crea una única burbuja flotante `#tooltipBubble` con `role="tooltip"` y la posiciona según escritorio o móvil. Tocar otro tooltip reemplaza el activo, tocar fuera cierra la burbuja y Escape también la oculta.
 
-Los tooltips no cambian mecánicas ni estado persistente: solo añaden ayuda contextual en la capa de presentación. En botones de decisión, el clic del activador detiene la propagación para que tocar exactamente un chip de ayuda no elija la opción por accidente.
+Los tooltips no cambian mecánicas ni estado persistente: solo añaden ayuda contextual en la capa de presentación. En botones de decisión, el clic del activador detiene la propagación para que tocar exactamente un chip o icono de ayuda no elija la opción por accidente. Cuando una opción define probabilidades explícitas, el tooltip puede resumirlas; si no, muestra solo impacto previsto y consecuencias cualitativas.
 
 ## Cómo funciona el bucle del juego
 

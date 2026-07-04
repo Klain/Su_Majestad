@@ -1,4 +1,4 @@
-const GAME_VERSION = "v0.4.1";
+const GAME_VERSION = "v0.4.2";
 const DEBUG_UI = false;
 const STORAGE_KEY = "su-majestad-save-v2";
 const LEGACY_STORAGE_KEY = "su-majestad-save-v1";
@@ -229,7 +229,7 @@ function renderEvents() {
   if (currentScreen !== "game" || !state) return;
   document.getElementById("events").innerHTML = state.todaysEvents.map((item, eventIndex) => {
     const resolved = state.resolved.includes(eventIndex) || state.gameOver;
-    const options = item.options.map((option, optionIndex) => `<button class="option-button" type="button" ${resolved ? "disabled" : ""} data-event="${eventIndex}" data-option="${optionIndex}"><span class="option-title">${option.label}</span><span class="effects chips" aria-label="Consecuencias previstas">${formatChoicePreview(option)}</span></button>`).join("");
+    const options = item.options.map((option, optionIndex) => `<button class="option-button" type="button" ${resolved ? "disabled" : ""} data-event="${eventIndex}" data-option="${optionIndex}"><span class="option-title"><span>${option.label}</span>${tooltip("ⓘ", formatChoiceTooltip(option), "icon option-help")}</span><span class="effects chips" aria-label="Consecuencias previstas">${formatChoicePreview(option)}</span></button>`).join("");
     return `<article class="event-card ${resolved ? "resolved" : ""}"><h3 class="event-title">${item.title}</h3><p class="event-text">${item.text}</p><div class="options">${options}</div></article>`;
   }).join("");
 
@@ -242,9 +242,9 @@ function renderReign() {
   if (currentScreen !== "game" || !state) return;
   const panel = document.getElementById("reign");
   if (!panel) return;
-  const crisis = state.activeCrisis?.remainingDays > 0 ? `${state.activeCrisis.name} (${state.activeCrisis.remainingDays}d)` : "Sin crisis";
-  const edict = state.activeEdicts?.length ? state.activeEdicts.map((item) => item.name).join(" · ") : "Sin edicto";
-  panel.innerHTML = `<div class="reign-grid"><span><strong>Rasgo ${tooltip("ⓘ", tooltipTexts.reign.trait, "icon")}</strong>${state.rulerTrait.name}</span><span><strong>Ambición ${tooltip("ⓘ", tooltipTexts.reign.ambition, "icon")}</strong>${state.ambition.name}</span><span><strong>Crisis ${tooltip("ⓘ", tooltipTexts.reign.crisis, "icon")}</strong>${crisis}</span><span><strong>Edicto ${tooltip("ⓘ", tooltipTexts.reign.edict, "icon")}</strong>${edict}</span></div>`;
+  const crisis = state.activeCrisis?.remainingDays > 0 ? tooltip(`${state.activeCrisis.name} (${state.activeCrisis.remainingDays}d)`, formatCrisisTooltip(state.activeCrisis)) : "Sin crisis";
+  const edict = state.activeEdicts?.length ? state.activeEdicts.map((item) => tooltip(item.name, formatEdictTooltip(item))).join(" · ") : "Sin edicto";
+  panel.innerHTML = `<div class="reign-grid"><span><strong>Rasgo ${tooltip("ⓘ", tooltipTexts.reign.trait, "icon")}</strong>${tooltip(state.rulerTrait.name, formatTraitTooltip(state.rulerTrait))}</span><span><strong>Ambición ${tooltip("ⓘ", tooltipTexts.reign.ambition, "icon")}</strong>${tooltip(state.ambition.name, state.ambition.description)}</span><span><strong>Crisis ${tooltip("ⓘ", tooltipTexts.reign.crisis, "icon")}</strong>${crisis}</span><span><strong>Edicto ${tooltip("ⓘ", tooltipTexts.reign.edict, "icon")}</strong>${edict}</span></div>`;
 }
 
 function renderEdictOffer() {
@@ -477,6 +477,59 @@ function isAmbitionComplete() {
   if (state.ambition.id === "noble") return r.nobility >= 70 && !tags.some((tag) => /insult|baron_lands_taken|mocked/.test(tag));
   return false;
 }
+
+function formatChoiceTooltip(option) {
+  const parts = [];
+  const directEffects = option.outcomes?.length ? summarizeWeightedOutcomes(option.outcomes) : (option.immediate || option.effects || {});
+  const effectText = formatEffectsText(directEffects);
+  if (effectText) parts.push(`Impacto previsto: ${effectText}.`);
+  if (option.outcomes?.length) parts.push(formatOutcomeProbabilityText(option.outcomes));
+  if (option.defer?.length) parts.push(formatDeferredProbabilityText(option.defer));
+  if (option.addTags?.length) parts.push("Dejará memoria política en el reino.");
+  if (option.issues?.length) parts.push("Puede alterar un conflicto persistente.");
+  return parts.filter(Boolean).join(" ") || "Decisión sin impacto visible inmediato; la corte observará el gesto.";
+}
+
+function summarizeWeightedOutcomes(outcomes = []) {
+  const combined = {};
+  outcomes.forEach((outcome) => {
+    Object.entries(outcome.immediate || outcome.effects || {}).forEach(([key, value]) => {
+      if (!resourceMeta[key] || value === 0) return;
+      combined[key] = Math.round((combined[key] || 0) + value * (outcome.probability || 1));
+    });
+  });
+  return combined;
+}
+
+function formatOutcomeProbabilityText(outcomes = []) {
+  const branches = outcomes.map((outcome) => {
+    const chance = Math.round((outcome.probability || 0) * 100);
+    const effects = formatEffectsText(outcome.immediate || outcome.effects || {});
+    return `${chance}%: ${effects || outcome.text || "resultado narrativo"}`;
+  });
+  return branches.length ? `Probabilidades: ${branches.join(" · ")}.` : "";
+}
+
+function formatDeferredProbabilityText(deferred = []) {
+  const lines = deferred.flatMap((item) => item.branches?.length ? [item.branches.map((branch, index) => `${Math.round((branch.probability || 0) * 100)}% rama ${index + 1}`).join(" / ")] : []);
+  return lines.length ? `Consecuencia futura posible: ${lines.join("; ")}.` : "Puede traer una consecuencia futura, sin probabilidad pública.";
+}
+
+function formatTraitTooltip(trait) {
+  return `Rasgo inicial: ${formatEffectsText(trait.effects)}.`;
+}
+
+function formatCrisisTooltip(crisis) {
+  const daily = formatEffectsText(crisis.daily);
+  return `${crisis.description}${daily ? ` Efecto diario mientras dure: ${daily}.` : ""}`;
+}
+
+function formatEdictTooltip(edict) {
+  const daily = formatEffectsText(edict.daily);
+  const cost = formatEffectsText(edict.cost);
+  return `${edict.description}${daily ? ` Efecto recurrente: ${daily}.` : ""}${cost ? ` Coste ocasional: ${cost}.` : ""}`;
+}
+
 
 function formatChoicePreview(option) {
   const chips = [];

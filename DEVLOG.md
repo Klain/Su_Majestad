@@ -92,3 +92,10 @@ El final de partida deja de ser un mensaje incrustado en la pantalla de juego. L
 Se añade una capa de explicación contextual para reducir la densidad visual sin esconder información importante. En recursos, reinado, issues y consecuencias previstas, los textos explican qué significa cada dato con tono narrativo y sin exponer fórmulas internas.
 
 La solución evita depender de `title`: usa activadores tocables y enfocables, funciona con ratón, teclado y móvil, y permite cerrar la burbuja al tocar fuera o pulsar Escape. Así la interfaz gana legibilidad y sensación profesional sin alterar las mecánicas de decisión ni el balance.
+
+
+## v0.4.2 - Ayuda persistente de decisiones y reinado
+
+Los tooltips dejan de explicar solo la categoría y pasan a explicar también el valor concreto elegido: qué aporta el rasgo inicial, cuál es la ambición, qué hace la crisis activa y qué mantiene el edicto vigente. Esto evita que el jugador pierda contexto después de la pantalla de creación o tras varios días de partida.
+
+Las opciones del consejo incorporan una ayuda dedicada con impacto previsto y probabilidades cuando existen ramas explícitas. La intención es aclarar riesgo y beneficio sin convertir la interfaz principal en una hoja de cálculo: los chips siguen siendo breves, y el detalle queda bajo demanda.

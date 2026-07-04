@@ -2,6 +2,16 @@
 
 Todas las versiones del proyecto deben usar formato semver y actualizar este archivo cuando haya cambios importantes.
 
+## v0.4.2 - 2026-07-04
+
+### Cambios realizados
+- El valor elegido de rasgo, ambición, crisis y edicto activo ahora conserva tooltip propio con su efecto o descripción.
+- Las opciones del consejo añaden un indicador de ayuda con impacto previsto y probabilidades cuando el evento las define.
+- Se actualiza la versión a `v0.4.2`.
+
+### Correcciones
+- La ayuda de decisiones usa un icono separado para no elegir la opción accidentalmente al consultar el tooltip.
+
 ## v0.4.1 - 2026-07-04
 
 ### Cambios realizados

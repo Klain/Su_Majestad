@@ -277,3 +277,61 @@ h2 { margin: 0; }
   .reign-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .edict-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+.screen { display: block; }
+.screen.hidden { display: none; }
+.subtitle { color: var(--muted); font-size: 1rem; line-height: 1.5; margin: 0.75rem 0 0; }
+.menu-card, .setup-card, .ending-card {
+  background: linear-gradient(145deg, rgba(48, 33, 63, 0.98), rgba(20, 14, 28, 0.98));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+  padding: clamp(1.25rem, 5vw, 2rem);
+}
+.menu-card { margin-top: 12vh; text-align: center; }
+.menu-actions, .setup-actions { display: grid; gap: 0.75rem; margin-top: 1.2rem; }
+.danger-button { background: rgba(239, 111, 108, 0.22); border: 1px solid rgba(239, 111, 108, 0.42); padding: 12px 18px; }
+.danger-button.hidden { display: none; }
+.setup-card h2, .ending-card h2 { color: var(--gold); font-size: clamp(1.8rem, 7vw, 3rem); margin: 0.2rem 0 0.5rem; }
+.setup-card p, .ending-card p { color: var(--muted); line-height: 1.5; }
+.setup-group { margin-top: 1.25rem; }
+.setup-group h3 { color: var(--gold); margin: 0 0 0.65rem; }
+.choice-grid { display: grid; gap: 0.75rem; }
+.choice-card {
+  background: rgba(59, 42, 79, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: grid;
+  gap: 0.35rem;
+  min-height: 84px;
+  padding: 1rem;
+  text-align: left;
+}
+.choice-card span { color: var(--muted); font-size: 0.9rem; font-weight: 700; line-height: 1.35; }
+.choice-card.selected { border-color: rgba(244, 195, 91, 0.75); box-shadow: 0 0 0 2px rgba(244, 195, 91, 0.16); }
+.ending-card { margin-top: 2rem; }
+.ending-card.win { border-color: rgba(117, 212, 155, 0.45); }
+.ending-card.lose { border-color: rgba(239, 111, 108, 0.48); }
+.run-summary {
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 18px;
+  color: #eadfce;
+  line-height: 1.55;
+  margin: 1rem 0;
+  padding: 1rem;
+}
+.death-cause {
+  background: rgba(239, 111, 108, 0.14);
+  border: 1px solid rgba(239, 111, 108, 0.36);
+  border-radius: 16px;
+  color: #ffd0cf !important;
+  font-weight: 900;
+  padding: 0.8rem 1rem;
+}
+.chronicle-list { color: var(--muted); line-height: 1.45; padding-left: 1.25rem; }
+.ending-card summary { color: var(--gold); cursor: pointer; font-weight: 900; margin-top: 1rem; }
+
+@media (min-width: 720px) {
+  .menu-actions, .setup-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .choice-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

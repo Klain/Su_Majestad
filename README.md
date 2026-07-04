@@ -1,6 +1,6 @@
 # Su Majestad
 
-**Versión actual:** `v0.3.0`
+**Versión actual:** `v0.4.0`
 
 `Su Majestad` es un roguelike de gestión de reino para móvil y escritorio, creado con HTML, CSS y JavaScript puro. La partida dura 30 días y cada jornada presenta asuntos del consejo que pueden cambiar recursos, abrir conflictos, recordar personajes o provocar consecuencias futuras.
 
@@ -23,17 +23,20 @@ El objetivo no es solo optimizar barras: tus decisiones dejan memoria narrativa 
 ## Cómo jugar
 
 1. Abre `index.html` en un navegador móvil o de escritorio.
-2. Cada partida dura 30 días.
-3. Cada día aparecen 2 eventos del consejo.
-4. Elige una opción por evento.
-5. Pulsa **Terminar día** cuando hayas resuelto los 2 asuntos.
-6. Sobrevive hasta completar el día 30 para ganar.
+2. Desde el menú principal, continúa una partida guardada o crea un nuevo reinado.
+3. En nueva partida, elige 1 rasgo del monarca y 1 ambición entre 3 opciones aleatorias.
+4. Cada partida dura 30 días.
+5. Cada día aparecen 2 eventos del consejo.
+6. Elige una opción por evento.
+7. Pulsa **Terminar día** cuando hayas resuelto los 2 asuntos.
+8. Sobrevive hasta completar el día 30 para ganar y revisa la pantalla final de crónica.
 
 Pierdes si oro, comida, ejército, pueblo, nobleza o fe llegan a 0. También pierdes si amenaza llega a 100.
 
 ## Características actuales
 
 - Interfaz responsive orientada a móvil.
+- Flujo completo de pantallas internas: menú, setup, partida activa y final de partida.
 - Versión visible en la pantalla principal.
 - Sistema híbrido de eventos: sucesos simples, eventos modulares con escaladas y cadenas narrativas largas hechas a mano.
 - Issues activos del reino con actor, tipo, etapa, tensión, confianza, etiquetas, días activos y último día de evento.
@@ -42,7 +45,8 @@ Pierdes si oro, comida, ejército, pueblo, nobleza o fe llegan a 0. También pie
 - Memoria persistente del reino: historial, etiquetas, personajes recurrentes y eventos pendientes.
 - Guardado automático con `localStorage`.
 - Sistemas roguelike ligeros: rasgo inicial, ambición de reinado, crisis de temporada, edictos y epílogo narrativo.
-- Botón **Nueva partida** para reiniciar.
+- Menú con continuar reinado, nuevo reinado y borrado de guardado.
+- Pantalla final con victoria/derrota, causa de caída, recursos, issues, decisiones recientes y crónica desplegable.
 - Sin dependencias y sin build step.
 
 ## Cómo publicarlo en GitHub Pages

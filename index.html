@@ -9,47 +9,63 @@
 </head>
 <body>
   <main class="app" aria-live="polite">
-    <header class="hero">
-      <div>
+    <section id="menuScreen" class="screen menu-screen">
+      <article class="menu-card">
         <p class="eyebrow">Roguelike de gestión</p>
         <h1>Su Majestad</h1>
-        <p class="version-badge" aria-label="Versión actual del juego">Versión <span id="gameVersion">v0.3.0</span></p>
-      </div>
-      <button id="newGameButton" class="secondary-button" type="button">Nueva partida</button>
-    </header>
-
-    <section class="status-card">
-      <div class="day-panel">
-        <span>Día</span>
-        <strong id="dayNumber">1</strong>
-        <small>de 30</small>
-      </div>
-      <div class="progress-shell" aria-label="Progreso de la campaña">
-        <div id="dayProgress" class="progress-bar"></div>
-      </div>
+        <p class="subtitle">Cada reinado es una run de decisiones, memoria y consecuencias.</p>
+        <p class="version-badge" aria-label="Versión actual del juego">Versión <span id="gameVersion">v0.4.0</span></p>
+        <div class="menu-actions">
+          <button id="continueButton" class="primary-button" type="button">Continuar reinado</button>
+          <button id="newRunButton" class="secondary-button" type="button">Nuevo reinado</button>
+          <button id="deleteSaveButton" class="danger-button hidden" type="button">Borrar partida</button>
+        </div>
+      </article>
     </section>
 
-    <section id="resources" class="resources-grid" aria-label="Recursos del reino"></section>
-
-    <section id="reign" class="reign-card" aria-label="Reinado actual"></section>
-
-    <section id="edictOffer" class="edict-offer hidden" aria-label="Oferta de edictos"></section>
-
-    <section id="message" class="message hidden"></section>
-
-    <section id="memory" class="memory-card" aria-label="Memoria del reino"></section>
-
-    <section id="issues" class="issues-card" aria-label="Issues activos del reino"></section>
-
-    <section class="events-header">
-      <h2>Consejo del día</h2>
-      <p>Resuelve los 2 asuntos antes de cerrar la jornada.</p>
+    <section id="setupScreen" class="screen hidden">
+      <article class="setup-card">
+        <p class="eyebrow">Nueva partida</p>
+        <h2>Forja tu monarca</h2>
+        <p>Elige un rasgo inicial y una ambición. La corte juzgará tu reinado por ambos.</p>
+        <div class="setup-group">
+          <h3>Rasgo del monarca</h3>
+          <div id="traitChoices" class="choice-grid"></div>
+        </div>
+        <div class="setup-group">
+          <h3>Ambición</h3>
+          <div id="ambitionChoices" class="choice-grid"></div>
+        </div>
+        <div class="setup-actions">
+          <button id="startRunButton" class="primary-button" type="button" disabled>Comenzar reinado</button>
+          <button id="setupBackButton" class="secondary-button" type="button">Volver al menú</button>
+        </div>
+      </article>
     </section>
 
-    <section id="events" class="events-list"></section>
+    <section id="gameScreen" class="screen hidden">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Roguelike de gestión</p>
+          <h1>Su Majestad</h1>
+          <p class="version-badge" aria-label="Versión actual del juego">Versión <span id="gameVersionGame">v0.4.0</span></p>
+        </div>
+        <button id="menuButton" class="secondary-button" type="button">Menú</button>
+      </header>
+      <section class="status-card"><div class="day-panel"><span>Día</span><strong id="dayNumber">1</strong><small>de 30</small></div><div class="progress-shell" aria-label="Progreso de la campaña"><div id="dayProgress" class="progress-bar"></div></div></section>
+      <section id="resources" class="resources-grid" aria-label="Recursos del reino"></section>
+      <section id="reign" class="reign-card" aria-label="Reinado actual"></section>
+      <section id="edictOffer" class="edict-offer hidden" aria-label="Oferta de edictos"></section>
+      <section id="message" class="message hidden"></section>
+      <section id="memory" class="memory-card" aria-label="Memoria del reino"></section>
+      <section id="issues" class="issues-card" aria-label="Issues activos del reino"></section>
+      <section class="events-header"><h2>Consejo del día</h2><p>Resuelve los 2 asuntos antes de cerrar la jornada.</p></section>
+      <section id="events" class="events-list"></section>
+      <section class="actions"><button id="endDayButton" class="primary-button" type="button" disabled>Terminar día</button></section>
+    </section>
 
-    <section class="actions">
-      <button id="endDayButton" class="primary-button" type="button" disabled>Terminar día</button>
+    <section id="endingScreen" class="screen hidden">
+      <article id="endingCard" class="ending-card"></article>
     </section>
   </main>
 

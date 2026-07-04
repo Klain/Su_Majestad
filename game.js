@@ -1,4 +1,4 @@
-const GAME_VERSION = "v0.3.0";
+const GAME_VERSION = "v0.4.0";
 const DEBUG_UI = false;
 const STORAGE_KEY = "su-majestad-save-v2";
 const LEGACY_STORAGE_KEY = "su-majestad-save-v1";
@@ -55,9 +55,12 @@ const edicts = [
 const startingResources = { gold: 55, food: 55, army: 45, people: 55, nobility: 50, faith: 50, threat: 20 };
 const eventManager = new EventManager(events, { actors, families });
 let state;
+let currentScreen = "menu";
+let setupOptions = { traits: [], ambitions: [], selectedTrait: null, selectedAmbition: null };
 
-function newGame() {
-  const trait = pickRandom(rulerTraits);
+function newGame(selection = {}) {
+  const trait = selection.trait || pickRandom(rulerTraits);
+  const ambition = selection.ambition || pickRandom(ambitions);
   const resources = { ...startingResources };
   applyResourceDelta(resources, trait.effects);
   state = eventManager.normalizeState({
@@ -68,7 +71,7 @@ function newGame() {
     gameOver: false,
     outcome: null,
     lastResult: null,
-    ambition: pickRandom(ambitions),
+    ambition,
     rulerTrait: trait,
     activeCrisis: null,
     activeEdicts: [],
@@ -78,7 +81,7 @@ function newGame() {
   });
   state.todaysEvents = drawEventsForToday();
   save();
-  render();
+  setScreen("game");
 }
 
 function drawEventsForToday() {
@@ -107,7 +110,7 @@ function applyChoice(eventIndex, optionIndex) {
 function endDay() {
   if (state.resolved.length < EVENTS_PER_DAY || state.gameOver) return;
   applyDailyRoguelikeSystems();
-  if (state.gameOver) { save(); render(); return; }
+  if (state.gameOver) { save(); setScreen("ending"); return; }
   state.day += 1;
   if (state.day > MAX_DAYS) {
     state.gameOver = true;
@@ -122,7 +125,8 @@ function endDay() {
     state.resolved = [];
   }
   save();
-  render();
+  if (state.gameOver) setScreen("ending");
+  else render();
 }
 
 function checkOutcome() {
@@ -137,19 +141,26 @@ function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
 function load() {
   const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
-  if (!saved) return newGame();
+  if (!saved) { state = null; return setScreen("menu"); }
   try {
     state = normalizeRoguelikeState(eventManager.normalizeState(JSON.parse(saved)));
     state.todaysEvents = Array.isArray(state.todaysEvents) && state.todaysEvents.length ? state.todaysEvents : drawEventsForToday();
   } catch {
-    return newGame();
+    state = null;
+    return setScreen("menu");
   }
   save();
-  render();
+  setScreen(state.gameOver ? "ending" : "menu");
 }
 
 function render() {
-  document.getElementById("gameVersion").textContent = GAME_VERSION;
+  document.querySelectorAll("#gameVersion, #gameVersionGame").forEach((node) => { node.textContent = GAME_VERSION; });
+  renderMenu();
+  renderSetup();
+  if (state?.gameOver && currentScreen !== "ending") currentScreen = "ending";
+  syncScreens();
+  if (currentScreen === "ending") return renderEnding();
+  if (currentScreen !== "game" || !state) return;
   document.getElementById("dayNumber").textContent = Math.min(state.day, MAX_DAYS);
   document.getElementById("dayProgress").style.width = `${(Math.min(state.day, MAX_DAYS) / MAX_DAYS) * 100}%`;
   renderResources();
@@ -173,6 +184,7 @@ function normalizeRoguelikeState(saved) {
 }
 
 function renderResources() {
+  if (currentScreen !== "game" || !state) return;
   document.getElementById("resources").innerHTML = Object.entries(resourceMeta).map(([key, [name, icon]]) => {
     const value = state.resources[key];
     const classes = ["resource", key === "threat" ? "threat" : "", value <= 18 && key !== "threat" ? "low" : ""].join(" ");
@@ -181,6 +193,7 @@ function renderResources() {
 }
 
 function renderEvents() {
+  if (currentScreen !== "game" || !state) return;
   document.getElementById("events").innerHTML = state.todaysEvents.map((item, eventIndex) => {
     const resolved = state.resolved.includes(eventIndex) || state.gameOver;
     const options = item.options.map((option, optionIndex) => `<button class="option-button" type="button" ${resolved ? "disabled" : ""} data-event="${eventIndex}" data-option="${optionIndex}"><span class="option-title">${option.label}</span><span class="effects chips" aria-label="Consecuencias previstas">${formatChoicePreview(option)}</span></button>`).join("");
@@ -193,6 +206,7 @@ function renderEvents() {
 }
 
 function renderReign() {
+  if (currentScreen !== "game" || !state) return;
   const panel = document.getElementById("reign");
   if (!panel) return;
   const crisis = state.activeCrisis?.remainingDays > 0 ? `${state.activeCrisis.name} (${state.activeCrisis.remainingDays}d)` : "Sin crisis";
@@ -201,6 +215,7 @@ function renderReign() {
 }
 
 function renderEdictOffer() {
+  if (currentScreen !== "game" || !state) return;
   const panel = document.getElementById("edictOffer");
   if (!panel) return;
   if (!state.edictChoices?.length || state.gameOver) { panel.className = "edict-offer hidden"; panel.innerHTML = ""; return; }
@@ -243,6 +258,7 @@ function applyDailyRoguelikeSystems() {
 }
 
 function renderIssues() {
+  if (currentScreen !== "game" || !state) return;
   const panel = document.getElementById("issues");
   if (!panel) return;
   const issues = state.issues || [];
@@ -284,6 +300,7 @@ function formatIssueType(type) {
 }
 
 function renderMemory() {
+  if (currentScreen !== "game" || !state) return;
   const memory = document.getElementById("memory");
   if (!memory) return;
   const recent = state.history.slice(-2).reverse();
@@ -383,6 +400,7 @@ function humanizeIdentifier(value) {
 }
 
 function renderMessage() {
+  if (currentScreen !== "game" || !state) return;
   const box = document.getElementById("message");
   if (!state.gameOver) {
     if (state.lastResult?.resultText) {
@@ -485,6 +503,64 @@ function formatStoryHookChips(option) {
   return hooks;
 }
 
-document.getElementById("newGameButton").addEventListener("click", newGame);
+
+function hasValidSave() {
+  const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+  if (!saved) return false;
+  try { return !!eventManager.normalizeState(JSON.parse(saved)); } catch { return false; }
+}
+
+function setScreen(screen) { currentScreen = screen; render(); }
+function syncScreens() { ["menu", "setup", "game", "ending"].forEach((screen) => document.getElementById(`${screen}Screen`).classList.toggle("hidden", currentScreen !== screen)); }
+function renderMenu() {
+  const hasSave = hasValidSave();
+  document.getElementById("continueButton").disabled = !hasSave;
+  document.getElementById("deleteSaveButton").classList.toggle("hidden", !hasSave);
+}
+function openSetup() {
+  setupOptions = { traits: pickMany(rulerTraits, 3), ambitions: pickMany(ambitions, 3), selectedTrait: null, selectedAmbition: null };
+  setScreen("setup");
+}
+function renderSetup() {
+  const traitBox = document.getElementById("traitChoices");
+  const ambitionBox = document.getElementById("ambitionChoices");
+  if (!traitBox || !ambitionBox) return;
+  traitBox.innerHTML = setupOptions.traits.map((trait) => `<button class="choice-card ${setupOptions.selectedTrait?.id === trait.id ? "selected" : ""}" type="button" data-trait="${trait.id}"><strong>${trait.name}</strong><span>${formatEffectsText(trait.effects)}</span></button>`).join("");
+  ambitionBox.innerHTML = setupOptions.ambitions.map((ambition) => `<button class="choice-card ${setupOptions.selectedAmbition?.id === ambition.id ? "selected" : ""}" type="button" data-ambition="${ambition.id}"><strong>${ambition.name}</strong><span>${ambition.description}</span></button>`).join("");
+  document.getElementById("startRunButton").disabled = !setupOptions.selectedTrait || !setupOptions.selectedAmbition;
+  traitBox.querySelectorAll("[data-trait]").forEach((button) => button.addEventListener("click", () => { setupOptions.selectedTrait = rulerTraits.find((item) => item.id === button.dataset.trait); renderSetup(); }));
+  ambitionBox.querySelectorAll("[data-ambition]").forEach((button) => button.addEventListener("click", () => { setupOptions.selectedAmbition = ambitions.find((item) => item.id === button.dataset.ambition); renderSetup(); }));
+}
+function formatEffectsText(effects = {}) { return Object.entries(effects).map(([key, value]) => `${resourceMeta[key]?.[0] || key} ${value > 0 ? "+" : ""}${value}`).join(" · "); }
+function startSelectedRun() {
+  if (!setupOptions.selectedTrait || !setupOptions.selectedAmbition) return;
+  if (hasValidSave() && !confirm("Comenzar un nuevo reinado sobrescribirá la partida guardada anterior. ¿Continuar?")) return;
+  newGame({ trait: setupOptions.selectedTrait, ambition: setupOptions.selectedAmbition });
+}
+function deleteSave() { if (!hasValidSave() || !confirm("¿Borrar la partida guardada?")) return; localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(LEGACY_STORAGE_KEY); state = null; setScreen("menu"); }
+function continueRun() { if (!state) loadSavedState(); if (state) setScreen(state.gameOver ? "ending" : "game"); }
+function loadSavedState() { const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY); if (!saved) return; state = normalizeRoguelikeState(eventManager.normalizeState(JSON.parse(saved))); state.todaysEvents = Array.isArray(state.todaysEvents) && state.todaysEvents.length ? state.todaysEvents : drawEventsForToday(); }
+function getDeathCause() { const r = state.resources; if (r.gold <= 0) return "Bancarrota"; if (r.food <= 0) return "Hambruna"; if (r.army <= 0) return "Ejército roto"; if (r.people <= 0) return "Revuelta popular"; if (r.nobility <= 0) return "Nobleza sublevada"; if (r.faith <= 0) return "Fe colapsada"; if (r.threat >= 100) return "Reino consumido por amenaza"; return "Desenlace incierto"; }
+function renderEnding() {
+  const card = document.getElementById("endingCard");
+  if (!state) { card.innerHTML = ""; return; }
+  const epilogue = state.epilogue || buildEpilogue();
+  const won = state.outcome === "win";
+  const history = (state.history || []).slice(-3).reverse();
+  const pending = state.pendingEvents || [];
+  card.className = `ending-card ${won ? "win" : "lose"}`;
+  card.innerHTML = `<p class="eyebrow">${won ? "Victoria" : "Derrota"}</p><h2>${epilogue.title}</h2><p>${won ? "La corte recordará este gobierno como una historia cerrada." : `Tu reinado cayó en el día ${state.day}. La corte recordará este gobierno como una advertencia.`}</p><p>${epilogue.text}</p><div class="run-summary"><strong>Ambición:</strong> ${state.ambition.name} — ${epilogue.ambitionWon ? "cumplida" : "La ambición quedó incompleta."}<br><strong>Rasgo inicial:</strong> ${state.rulerTrait.name}<br><strong>Día alcanzado:</strong> ${Math.min(state.day, MAX_DAYS)}</div>${won ? "" : `<p class="death-cause">Causa de derrota: ${getDeathCause()}</p>`}<div class="run-summary"><strong>Recursos finales:</strong> ${Object.entries(resourceMeta).map(([key,[name]]) => `${name} ${state.resources[key]}`).join(" · ")}<br><strong>Issues resueltos:</strong> ${state.completedObjectives?.issuesResolved || 0}<br><strong>Issues activos restantes:</strong> ${(state.issues || []).length}</div><h3>Últimas decisiones importantes</h3><ul class="chronicle-list">${history.length ? history.map((item) => `<li>Día ${item.day}: ${item.choice} (${item.eventTitle})</li>`).join("") : "<li>La crónica quedó casi en blanco.</li>"}</ul>${pending.length ? `<p>Aún quedaban consecuencias pendientes.</p><ul class="chronicle-list">${pending.map((item) => `<li>Día ${item.dueDay || "?"}: ${item.eventId || item.id || "consecuencia"}</li>`).join("")}</ul>` : ""}<details><summary>Ver crónica</summary><ul class="chronicle-list">${(state.history || []).map((item) => `<li>Día ${item.day}: ${item.choice} (${item.eventTitle})${item.resultText ? ` — ${item.resultText}` : ""}</li>`).join("") || "<li>Sin decisiones registradas.</li>"}</ul></details><div class="setup-actions"><button id="endingNewRunButton" class="primary-button" type="button">Nuevo reinado</button><button id="endingMenuButton" class="secondary-button" type="button">Volver al menú</button><button id="copySummaryButton" class="secondary-button" type="button">Copiar resumen</button></div>`;
+  document.getElementById("endingNewRunButton").addEventListener("click", openSetup);
+  document.getElementById("endingMenuButton").addEventListener("click", () => setScreen("menu"));
+  document.getElementById("copySummaryButton").addEventListener("click", copyChronicle);
+}
+function copyChronicle() { const text = `${state.outcome === "win" ? "Victoria" : "Derrota"}: ${(state.epilogue || buildEpilogue()).title}\n${(state.history || []).map((item) => `Día ${item.day}: ${item.choice} (${item.eventTitle})`).join("\n")}`; navigator.clipboard?.writeText(text); }
+
+document.getElementById("continueButton").addEventListener("click", continueRun);
+document.getElementById("newRunButton").addEventListener("click", openSetup);
+document.getElementById("deleteSaveButton").addEventListener("click", deleteSave);
+document.getElementById("setupBackButton").addEventListener("click", () => setScreen("menu"));
+document.getElementById("startRunButton").addEventListener("click", startSelectedRun);
+document.getElementById("menuButton").addEventListener("click", () => setScreen("menu"));
 document.getElementById("endDayButton").addEventListener("click", endDay);
 load();

@@ -76,3 +76,12 @@ Este cambio refuerza la fantasía de gobernar bajo información incompleta: la c
 ## v0.3.0 - Sistemas roguelike ligeros
 
 Se añade identidad de partida mediante rasgo inicial, ambición, crisis de temporada y edictos. El diseño evita una historia principal o quests largas: son capas sistémicas pequeñas que modifican recursos, objetivos y pesos de familias de eventos.
+
+
+## v0.4.0 - Flujo completo de partida
+
+Esta versión convierte la interfaz de prototipo en un flujo de run más claro. La experiencia ya no comienza creando una partida de forma implícita: el jugador entra por un menú, decide si continúa o crea un nuevo reinado y entiende que cada partida tiene identidad propia.
+
+La creación del reinado hace explícitos dos ejes roguelike: el rasgo inicial y la ambición. Al presentar tres opciones aleatorias de cada tipo, cada run empieza con una promesa distinta y anima a probar combinaciones nuevas.
+
+El final de partida deja de ser un mensaje incrustado en la pantalla de juego. La derrota se presenta como cierre de run, con causa, recursos finales, asuntos pendientes y últimas decisiones. La victoria también cierra la historia y no se limita a declarar que se ha ganado.

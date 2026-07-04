@@ -2,6 +2,20 @@
 
 Todas las versiones del proyecto deben usar formato semver y actualizar este archivo cuando haya cambios importantes.
 
+## v0.4.0 - 2026-07-04
+
+### Cambios realizados
+- Se añade flujo completo de partida con pantallas internas para menú, creación, partida activa y final de run.
+- La creación de partida permite elegir 1 rasgo y 1 ambición entre 3 opciones aleatorias antes de comenzar.
+- El menú ya no inicia automáticamente una partida nueva cuando no hay guardado y permite continuar o borrar una partida existente.
+- La pantalla final muestra victoria o derrota, epílogo, ambición, rasgo, día alcanzado, causa de derrota, recursos finales, issues y crónica.
+- `newGame` acepta `{ trait, ambition }` y conserva selección aleatoria como fallback.
+- Se actualiza la versión a `v0.4.0`.
+
+### Correcciones
+- `render()` evita pintar la partida activa si no hay estado válido y deriva los finales a la pantalla de cierre.
+- Se mantiene `STORAGE_KEY` para no romper partidas guardadas anteriores.
+
 ## v0.3.0 - 2026-07-03
 
 ### Cambios realizados

@@ -9,7 +9,7 @@ class EventManager {
   }
 
   createInitialMemory() {
-    return { tags: [], history: [], pendingEvents: [], characters: {}, issues: [] };
+    return { tags: [], history: [], pendingEvents: [], characters: {}, issues: [], news: [] };
   }
 
   normalizeState(state) {
@@ -18,6 +18,7 @@ class EventManager {
     state.pendingEvents = Array.isArray(state.pendingEvents) ? state.pendingEvents : [];
     state.characters = state.characters && typeof state.characters === "object" ? state.characters : {};
     state.issues = Array.isArray(state.issues) ? state.issues.map((issue) => this.normalizeIssue(issue)).filter(Boolean) : [];
+    state.news = Array.isArray(state.news) ? state.news.map((item) => this.normalizeNews(item)).filter(Boolean) : [];
     return state;
   }
 
@@ -32,8 +33,44 @@ class EventManager {
       trust: clamp(Number(issue.trust ?? 50)),
       tags: Array.isArray(issue.tags) ? issue.tags : [],
       daysActive: Math.max(0, Number(issue.daysActive || 0)),
-      lastEventDay: Number(issue.lastEventDay || 0)
+      lastEventDay: Number(issue.lastEventDay || 0),
+      reward: issue.reward || null,
+      unresolvedProblem: issue.unresolvedProblem || null,
+      trustProblem: issue.trustProblem || null
     };
+  }
+
+  normalizeNews(item) {
+    if (!item || !item.id || !item.title) return null;
+    const duration = Math.max(1, Number(item.duration || item.remainingDays || 1));
+    return {
+      id: String(item.id),
+      title: item.title,
+      text: item.text || item.description || "Noticia del reino.",
+      type: item.type || "aftermath",
+      source: item.source || "event",
+      sourceId: item.sourceId || null,
+      duration,
+      remainingDays: Math.max(0, Number(item.remainingDays ?? duration)),
+      daily: item.daily && typeof item.daily === "object" ? item.daily : {},
+      every: item.every || null,
+      cost: item.cost || null,
+      families: Array.isArray(item.families) ? item.families : [],
+      stacking: item.stacking || "refresh"
+    };
+  }
+
+  addNews(state, newsItems = [], source = "event", sourceId = null) {
+    state.news = Array.isArray(state.news) ? state.news : [];
+    newsItems.map((item) => this.normalizeNews({ source, sourceId, ...item })).filter(Boolean).forEach((news) => {
+      const existingIndex = state.news.findIndex((item) => item.id === news.id);
+      const stacking = news.stacking || "refresh";
+      if (existingIndex >= 0 && stacking === "ignore") return;
+      if (existingIndex >= 0 && stacking === "refresh") { state.news[existingIndex] = { ...state.news[existingIndex], ...news, remainingDays: news.duration }; return; }
+      if (existingIndex >= 0 && stacking === "replace") { state.news[existingIndex] = news; return; }
+      if (existingIndex >= 0 && stacking === "stack") news.id = `${news.id}-${state.day}-${state.news.length}-${Math.floor(this.random() * 100000)}`;
+      state.news.push(news);
+    });
   }
 
   tickIssues(state) {
@@ -76,6 +113,7 @@ class EventManager {
     const immediate = outcome ? (outcome.immediate || outcome.effects || {}) : (choice.immediate || choice.effects || {});
     this.applyEffects(state, immediate);
     this.addTags(state, choice.addTags || []);
+    this.addNews(state, choice.addNews || [], eventItem.kind === "consequence" ? "consequence" : "event", eventItem.id);
     this.rememberCharacters(state, choice.characters || []);
     this.applyIssueActions(state, choice.issues || [], eventItem);
     this.scheduleDeferred(state, choice.defer || [], eventItem.id);
@@ -96,7 +134,7 @@ class EventManager {
       if (!issue) return;
       if (action.action === "modify") this.modifyIssue(issue, action);
       if (action.action === "escalate") this.escalateIssue(issue, action);
-      if (action.action === "resolve") this.resolveIssue(state, issue.id, action.addTags || []);
+      if (action.action === "resolve") this.resolveIssue(state, issue.id, action.addTags || [], action);
       if (action.touch !== false && action.action !== "resolve") issue.lastEventDay = state.day;
     });
   }
@@ -112,6 +150,9 @@ class EventManager {
       tension: issueConfig.tension ?? 35,
       trust: issueConfig.trust ?? 50,
       tags: issueConfig.tags || eventItem.issueTags || [],
+      reward: issueConfig.reward || null,
+      unresolvedProblem: issueConfig.unresolvedProblem || null,
+      trustProblem: issueConfig.trustProblem || null,
       daysActive: 0,
       lastEventDay: state.day
     }));
@@ -135,11 +176,15 @@ class EventManager {
     issue.tension = clamp(issue.tension + (action.extraTension ?? 12));
   }
 
-  resolveIssue(state, issueId, tags = []) {
+  resolveIssue(state, issueId, tags = [], action = {}) {
+    const issue = state.issues.find((item) => item.id === issueId);
     const before = state.issues.length;
     state.issues = state.issues.filter((issue) => issue.id !== issueId);
     if (state.issues.length < before) state.completedObjectives = { ...(state.completedObjectives || {}), issuesResolved: (state.completedObjectives?.issuesResolved || 0) + 1 };
     this.addTags(state, tags);
+    if (issue?.reward?.addTags) this.addTags(state, issue.reward.addTags);
+    if (issue?.reward?.addNews) this.addNews(state, issue.reward.addNews, "crisis", issue.id);
+    if (action.addNews) this.addNews(state, action.addNews, "crisis", issueId);
   }
 
   scheduleDeferred(state, deferredItems, sourceEventId) {
@@ -260,10 +305,10 @@ class EventManager {
   }
 
   crisisWeightBonus(item, state) {
-    const crisis = state.activeCrisis;
-    if (!crisis?.families?.length || (crisis.remainingDays || 0) <= 0) return 0;
+    const seasonal = (state.news || []).filter((news) => news.type === "seasonal" && news.families?.length && news.remainingDays > 0);
+    if (!seasonal.length) return 0;
     const eventFamilies = new Set([item.family, ...(item.families || [])].filter(Boolean));
-    return crisis.families.filter((family) => eventFamilies.has(family)).length * (crisis.weightBonus || 2.5);
+    return seasonal.reduce((sum, news) => sum + news.families.filter((family) => eventFamilies.has(family)).length * (news.weightBonus || 2.5), 0);
   }
 
   issueWeightBonus(item, state) {

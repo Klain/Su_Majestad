@@ -2,7 +2,7 @@
 
 Todas las versiones del proyecto deben usar formato semver y actualizar este archivo cuando haya cambios importantes.
 
-## v0.5.0 - 2026-07-04
+## v0.6.0 - 2026-07-04
 
 ### Cambios realizados
 - Se sustituye el rasgo inicial plano por un árbol evolutivo de 3 tiers con ramas para oro, comida, ejército, pueblo, nobleza, fe y amenaza.
@@ -11,7 +11,7 @@ Todas las versiones del proyecto deben usar formato semver y actualizar este arc
 - El día 10 ofrece evolución a Tier 2 y el día 20 evolución a Tier 3 según el último rasgo de la cadena.
 - La setup UI muestra tier, descripción y efecto al adquirir; la partida muestra la cadena de rasgos y una tarjeta propia de evolución.
 - Se migran partidas antiguas con `state.rulerTrait` a rasgos equivalentes del nuevo árbol.
-- Se actualiza la versión a `v0.5.0`.
+- Se actualiza la versión a `v0.6.0`.
 
 ### Correcciones
 - La amenaza conserva polaridad inversa en chips y tooltips: bajar amenaza se presenta como favorable.
@@ -147,3 +147,13 @@ Todas las versiones del proyecto deben usar formato semver y actualizar este arc
 - El catálogo de eventos todavía vive en un único archivo y puede crecer demasiado.
 - La pantalla de memoria e issues activos es funcional, pero aún puede mejorar su presentación narrativa.
 - No hay migraciones explícitas por versión de guardado más allá de la normalización del estado.
+
+## v0.6.0 - Noticias del Reino y Crisis abiertas
+
+- Añade **Noticias del Reino** como sistema de pasivos temporales de varios días (`state.news`) para temporadas, edictos, consecuencias y eventos. Las partidas antiguas migran `activeCrisis` a noticia estacional y `activeEdicts` a noticias de edicto.
+- Separa **Crisis abiertas** de las noticias: las crisis persistentes siguen usando `state.issues` internamente, pero la UI las presenta como conflictos con actor, tensión, confianza, días abiertos, presión diaria, recompensa y problemas posibles.
+- Las opciones de evento aceptan `addNews`, con apilado `refresh`, `replace`, `stack` o `ignore`; el cierre del día aplica `daily`, costes periódicos y caducidad.
+- La presión de crisis se calcula una vez al día por tipo, etapa y tensión, sin crear noticias internas duplicadas.
+- La tarjeta de Reinado se centra en rasgo, ambición y cadena de rasgos; edictos y temporadas aparecen ahora en Noticias del Reino.
+- Los chips narrativos distinguen 🧠 Memoria, 📰 Noticia, ⚖️ Crisis, ⏳ Consecuencia y 🎲 Azar.
+

@@ -770,8 +770,6 @@ function formatTraitTooltip(trait) {
 
 function formatTraitChain() {
   const names = (state.traitPath || []).map((id) => rulerTraitsById[id]?.name).filter(Boolean);
-  const lastTrait = getLastTrait();
-  if ((lastTrait?.evolvesTo || []).length && names.length < 3) names.push("pendiente");
   return names.join(" → ") || "Sin rasgo";
 }
 

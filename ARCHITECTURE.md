@@ -2,9 +2,9 @@
 
 ## Estructura actual de archivos
 
-- `index.html`: estructura de la aplicación, puntos de montaje de la interfaz y carga de scripts estáticos para GitHub Pages.
+- `index.html`: estructura de la aplicación, contenedores `menuScreen`, `setupScreen`, `gameScreen` y `endingScreen`, puntos de montaje de la interfaz y carga de scripts estáticos para GitHub Pages.
 - `style.css`: estilos visuales, responsive móvil/escritorio y componentes de cartas, recursos, mensajes, memoria e issues.
-- `game.js`: estado principal, bucle de partida, renderizado, guardado, carga y constante `GAME_VERSION`.
+- `game.js`: estado principal, `currentScreen`, setup de nueva run, bucle de partida, renderizado, guardado, carga, pantalla final y constante `GAME_VERSION`.
 - `event-manager.js`: motor de eventos, memoria, consecuencias, actores, issues, selección ponderada e interpolación de texto.
 - `events.js`: helpers globales `event`, `normalizeOption`, el catálogo agregado `events` y `registerEvents`.
 - `data/actors.js`: actores persistentes reutilizables por eventos y cadenas.
@@ -22,14 +22,16 @@ El proyecto sigue sin usar dependencias externas ni paso de build. Por eso los m
 
 ## Cómo funciona el bucle del juego
 
-1. Al cargar la página, `game.js` intenta recuperar una partida desde `localStorage`.
-2. Si no hay partida válida, crea una nueva con recursos iniciales, memoria vacía y día 1.
-3. Cada día se seleccionan hasta 2 eventos: primero consecuencias vencidas y después eventos disponibles del catálogo.
-4. El jugador resuelve cada evento eligiendo una opción.
-5. Cada elección aplica efectos inmediatos, etiquetas, actores recordados, acciones sobre issues, consecuencias diferidas e historial.
-6. Cuando los 2 eventos del día están resueltos, el jugador puede terminar la jornada.
-7. Al terminar el día, avanzan los issues activos, se roba el siguiente consejo o se gana si se superan los 30 días.
-8. Tras cada decisión o avance se guarda automáticamente y se renderiza la interfaz.
+1. Al cargar la página, `game.js` muestra el menú principal y comprueba si existe guardado válido en `localStorage`.
+2. Si no hay partida válida, no crea una run automáticamente; el jugador debe abrir la pantalla de nueva partida.
+3. En nueva partida se ofrecen 3 rasgos y 3 ambiciones aleatorias; al comenzar se crea una run con recursos iniciales, memoria vacía y día 1.
+4. Cada día se seleccionan hasta 2 eventos: primero consecuencias vencidas y después eventos disponibles del catálogo.
+5. El jugador resuelve cada evento eligiendo una opción.
+6. Cada elección aplica efectos inmediatos, etiquetas, actores recordados, acciones sobre issues, consecuencias diferidas e historial.
+7. Cuando los 2 eventos del día están resueltos, el jugador puede terminar la jornada.
+8. Al terminar el día, avanzan los issues activos, se roba el siguiente consejo o se gana si se superan los 30 días.
+9. Si `state.gameOver` es verdadero, `currentScreen` pasa a `ending` y se renderiza el cierre de run.
+10. Tras cada decisión o avance se guarda automáticamente y se renderiza la interfaz.
 
 ## Catálogo modular
 
@@ -262,3 +264,10 @@ Cada cambio importante debe incrementar `GAME_VERSION`, actualizar `CHANGELOG.md
 ## v0.3.0 - Capa roguelike de partida
 
 La capa roguelike vive en `game.js` y persiste `ambition`, `rulerTrait`, `activeCrisis`, `activeEdicts`, `edictChoices` y `completedObjectives` dentro del mismo estado de `localStorage`. `EventManager.weightFor` consulta la crisis activa para sumar un bonus pequeño a eventos cuyas familias coinciden; el resto del motor de eventos permanece intacto.
+
+
+## Sistema de pantallas
+
+`game.js` mantiene `currentScreen` con cuatro valores: `menu`, `setup`, `game` y `ending`. `render()` sincroniza la clase `.hidden` en los contenedores de `index.html` y solo pinta la interfaz de partida cuando existe `state` y la pantalla activa es `game`.
+
+La pantalla `ending` usa el estado guardado para construir una crónica final: epílogo, ambición, rasgo inicial, causa de derrota, recursos, issues, decisiones recientes y consecuencias pendientes. Esto permite conservar el formato de guardado actual y evita modificar `EventManager`.

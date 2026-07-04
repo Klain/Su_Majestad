@@ -1,4 +1,4 @@
-const GAME_VERSION = "v0.4.2";
+const GAME_VERSION = "v0.4.3";
 const DEBUG_UI = false;
 const STORAGE_KEY = "su-majestad-save-v2";
 const LEGACY_STORAGE_KEY = "su-majestad-save-v1";
@@ -29,11 +29,11 @@ const tooltipTexts = {
     daysOpen: "Tiempo que el asunto lleva sin resolverse."
   },
   chips: {
-    uncertain: "Esta decisión puede tener consecuencias ocultas o resultados variables.",
-    memory: "Esta decisión dejará memoria en el reino y puede afectar eventos futuros.",
-    conflict: "Esta decisión puede crear, modificar, escalar o resolver un conflicto persistente.",
-    positive: "Este recurso probablemente mejorará.",
-    negative: "Este recurso probablemente empeorará."
+    uncertain: "Hay azar o consecuencias no totalmente visibles.",
+    memory: "La decisión quedará registrada en la memoria política del reino.",
+    conflict: "La decisión puede crear, modificar, escalar o resolver un conflicto persistente.",
+    positive: "Este recurso tiende a mejorar.",
+    negative: "Este recurso tiende a empeorar."
   }
 };
 
@@ -480,13 +480,16 @@ function isAmbitionComplete() {
 
 function formatChoiceTooltip(option) {
   const parts = [];
-  const directEffects = option.outcomes?.length ? summarizeWeightedOutcomes(option.outcomes) : (option.immediate || option.effects || {});
-  const effectText = formatEffectsText(directEffects);
-  if (effectText) parts.push(`Impacto previsto: ${effectText}.`);
   if (option.outcomes?.length) parts.push(formatOutcomeProbabilityText(option.outcomes));
+  else parts.push("Decisión de efecto previsible.");
   if (option.defer?.length) parts.push(formatDeferredProbabilityText(option.defer));
-  if (option.addTags?.length) parts.push("Dejará memoria política en el reino.");
+  if (option.addTags?.length) parts.push("Dejará memoria política.");
   if (option.issues?.length) parts.push("Puede alterar un conflicto persistente.");
+  if (DEBUG_UI) {
+    const directEffects = option.outcomes?.length ? summarizeWeightedOutcomes(option.outcomes) : (option.immediate || option.effects || {});
+    const effectText = formatEffectsText(directEffects);
+    if (effectText) parts.push(`DEBUG impacto previsto: ${effectText}.`);
+  }
   return parts.filter(Boolean).join(" ") || "Decisión sin impacto visible inmediato; la corte observará el gesto.";
 }
 
@@ -502,17 +505,77 @@ function summarizeWeightedOutcomes(outcomes = []) {
 }
 
 function formatOutcomeProbabilityText(outcomes = []) {
-  const branches = outcomes.map((outcome) => {
+  if (!outcomes.length) return "";
+  const summary = summarizeToneProbabilities(outcomes);
+  const branches = outcomes.map((outcome, index) => {
     const chance = Math.round((outcome.probability || 0) * 100);
-    const effects = formatEffectsText(outcome.immediate || outcome.effects || {});
-    return `${chance}%: ${effects || outcome.text || "resultado narrativo"}`;
+    const tone = outcomeToneLabel(outcome, true);
+    const detail = DEBUG_UI ? ` (${formatEffectsText(outcome.immediate || outcome.effects || {}) || outcome.text || "resultado narrativo"})` : "";
+    return `${chance}% ${tone}${detail || (outcomes.length > 2 ? ` ${index + 1}` : "")}`;
   });
-  return branches.length ? `Probabilidades: ${branches.join(" · ")}.` : "";
+  if (summary.success > summary.failure && summary.success >= summary.mixed) {
+    return `Éxito probable: ${summary.success}%. Riesgo: ${100 - summary.success}% de resultado menor. Ramas: ${branches.join(" · ")}.`;
+  }
+  if (summary.failure > summary.success && summary.failure >= summary.mixed) {
+    return `Riesgo elevado: ${summary.failure}% problemático. Posible mejora: ${summary.success}%. Ramas: ${branches.join(" · ")}.`;
+  }
+  const favorable = summary.success;
+  const problematic = summary.failure;
+  return `Resultado incierto: ${favorable}% favorable / ${problematic}% problemático${summary.mixed ? ` / ${summary.mixed}% mixto` : ""}. Ramas: ${branches.join(" · ")}.`;
 }
 
 function formatDeferredProbabilityText(deferred = []) {
-  const lines = deferred.flatMap((item) => item.branches?.length ? [item.branches.map((branch, index) => `${Math.round((branch.probability || 0) * 100)}% rama ${index + 1}`).join(" / ")] : []);
-  return lines.length ? `Consecuencia futura posible: ${lines.join("; ")}.` : "Puede traer una consecuencia futura, sin probabilidad pública.";
+  const lines = deferred.flatMap((item) => item.branches?.length ? [summarizeDeferredBranches(item.branches)] : []);
+  return lines.length ? `Consecuencia futura: ${lines.join("; ")}.` : "Puede traer una consecuencia futura, sin probabilidad pública.";
+}
+
+function summarizeDeferredBranches(branches = []) {
+  const summary = summarizeToneProbabilities(branches);
+  if (summary.success || summary.failure || summary.mixed) {
+    const parts = [];
+    if (summary.success) parts.push(`${summary.success}% desenlace favorable`);
+    if (summary.failure) parts.push(`${summary.failure}% complicación`);
+    if (summary.mixed) parts.push(`${summary.mixed}% desenlace mixto`);
+    return parts.join(" / ");
+  }
+  return branches.map((branch, index) => `${Math.round((branch.probability || 0) * 100)}% rama ${index + 1}`).join(" / ");
+}
+
+function summarizeToneProbabilities(branches = []) {
+  return branches.reduce((acc, branch) => {
+    const tone = outcomeToneLabel(branch);
+    const chance = Math.round((branch.probability || 0) * 100);
+    if (tone === "success") acc.success += chance;
+    else if (tone === "failure") acc.failure += chance;
+    else acc.mixed += chance;
+    return acc;
+  }, { success: 0, mixed: 0, failure: 0 });
+}
+
+function outcomeToneLabel(outcome, forPlayer = false) {
+  const tone = outcome.tone || inferOutcomeTone(outcome);
+  if (!forPlayer) return tone;
+  if (tone === "success") return "favorable";
+  if (tone === "failure") return "problemático";
+  return "mixto";
+}
+
+function inferOutcomeTone(outcome = {}) {
+  const effects = outcome.immediate || outcome.effects || {};
+  let score = 0;
+  let hasPositive = false;
+  let hasNegative = false;
+  Object.entries(effects).forEach(([key, value]) => {
+    if (!resourceMeta[key] || value === 0) return;
+    const adjusted = key === "threat" ? -value : value;
+    if (adjusted > 0) hasPositive = true;
+    if (adjusted < 0) hasNegative = true;
+    score += adjusted;
+  });
+  if (hasPositive && hasNegative) return "mixed";
+  if (score > 0) return "success";
+  if (score < 0) return "failure";
+  return "mixed";
 }
 
 function formatTraitTooltip(trait) {
@@ -541,34 +604,86 @@ function formatChoicePreview(option) {
   const visible = uniqueChips.slice(0, 4);
   if (uniqueChips.length > 4) visible[3] = { icon: "✦", text: "+ más" };
   if (!visible.length) visible.push({ icon: "❓", text: "Incierta" });
-  return visible.map(({ icon, text, tone = "" }) => tooltip(`${icon} ${text}`, tooltipTextForChip(tone, text), `effect-chip ${tone}`)).join("");
+  return visible.map(({ icon, text, tone = "", tooltipText = null }) => tooltip(`${icon} ${text}`, tooltipText || tooltipTextForChip(tone, text), `effect-chip ${tone}`)).join("");
 }
 
-function formatEffectChips(effects) {
+function formatEffectChips(effects, context = {}) {
   return Object.entries(effects)
     .filter(([key, value]) => resourceMeta[key] && value !== 0)
     .sort(([, a], [, b]) => Math.abs(b) - Math.abs(a))
-    .map(([key, value]) => formatImpactChip(key, value));
+    .map(([key, value]) => formatImpactChip(key, value, context));
 }
 
-function formatImpactChip(key, value) {
+function formatImpactChip(key, value, context = {}) {
   const [name, icon] = resourceMeta[key];
+  return {
+    icon,
+    text: `${name} ${arrowMagnitude(value)}`,
+    tone: resourceTone(key, value),
+    tooltipText: formatResourceChipTooltip(key, value, context)
+  };
+}
+
+function impactLevel(value) {
   const magnitude = Math.abs(value);
-  const level = magnitude >= 8 ? " fuerte" : magnitude >= 4 ? " moderado" : "";
-  return { icon, text: `${name} ${value > 0 ? "↑" : "↓"}${level}`, tone: value > 0 ? "positive" : "negative" };
+  if (magnitude >= 8) return "enorme";
+  if (magnitude >= 4) return "moderado";
+  return "minimo";
+}
+
+function arrowMagnitude(value) {
+  const arrows = Math.abs(value) >= 8 ? 3 : Math.abs(value) >= 4 ? 2 : 1;
+  return (value > 0 ? "↑" : "↓").repeat(arrows);
+}
+
+function formatResourceChipTooltip(key, value, context = {}) {
+  const [name] = resourceMeta[key];
+  const article = resourceArticle(key);
+  const subject = `${article} ${name.toLowerCase()}`;
+  if (context.variable) return `${capitalize(subject)} podría mejorar o empeorar: el resultado es variable entre ramas.`;
+  const verb = value > 0 ? "crecerá" : "bajará";
+  const adverb = impactAdverb(impactLevel(value));
+  const certainty = context.probable ? " como tendencia probable" : "";
+  const judgement = key === "threat" ? (value > 0 ? " Es una señal negativa." : " Es una señal positiva.") : "";
+  return `${capitalize(subject)} ${verb} ${adverb}${certainty}.${judgement}`;
 }
 
 function formatOutcomeChips(outcomes) {
   const combined = {};
+  const directions = {};
   outcomes.forEach((outcome) => {
     Object.entries(outcome.immediate || outcome.effects || {}).forEach(([key, value]) => {
       if (!resourceMeta[key] || value === 0) return;
       combined[key] = (combined[key] || 0) + Math.sign(value) * Math.abs(value) * (outcome.probability || 1);
+      directions[key] = directions[key] || new Set();
+      directions[key].add(Math.sign(value));
     });
   });
-  const chips = formatEffectChips(combined);
+  const chips = Object.entries(combined)
+    .filter(([key, value]) => resourceMeta[key] && value !== 0)
+    .sort(([, a], [, b]) => Math.abs(b) - Math.abs(a))
+    .map(([key, value]) => formatImpactChip(key, value, { probable: true, variable: (directions[key]?.size || 0) > 1 }));
   chips.unshift({ icon: "❓", text: "Incierta", tone: "uncertain" });
   return chips;
+}
+
+function resourceTone(key, value) {
+  const improves = key === "threat" ? value < 0 : value > 0;
+  return improves ? "positive" : "negative";
+}
+
+function resourceArticle(key) {
+  return ["food", "nobility", "faith", "threat"].includes(key) ? "la" : "el";
+}
+
+function impactAdverb(level) {
+  if (level === "enorme") return "enormemente";
+  if (level === "moderado") return "moderadamente";
+  return "mínimamente";
+}
+
+function capitalize(value) {
+  return String(value).charAt(0).toUpperCase() + String(value).slice(1);
 }
 
 function dedupeChips(chips) {

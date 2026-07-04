@@ -99,3 +99,9 @@ La solución evita depender de `title`: usa activadores tocables y enfocables, f
 Los tooltips dejan de explicar solo la categoría y pasan a explicar también el valor concreto elegido: qué aporta el rasgo inicial, cuál es la ambición, qué hace la crisis activa y qué mantiene el edicto vigente. Esto evita que el jugador pierda contexto después de la pantalla de creación o tras varios días de partida.
 
 Las opciones del consejo incorporan una ayuda dedicada con impacto previsto y probabilidades cuando existen ramas explícitas. La intención es aclarar riesgo y beneficio sin convertir la interfaz principal en una hoja de cálculo: los chips siguen siendo breves, y el detalle queda bajo demanda.
+
+## v0.4.3 - Tres niveles de información de riesgo
+
+La interfaz de decisiones separa ahora tres capas para reforzar el tono roguelike sin volver a una hoja de cálculo. El chip visible es lectura rápida: recurso, dirección y magnitud mediante flechas. El tooltip individual del chip explica de forma cualitativa si el recurso crecerá o bajará mínimamente, moderadamente o enormemente, y avisa cuando una decisión probabilística puede variar entre ramas.
+
+El tooltip general de la decisión deja de listar costes exactos por defecto. Su función pasa a ser informar el riesgo: porcentajes de ramas inmediatas, lectura favorable/problemática/mixta y probabilidades de consecuencias futuras cuando existen. Los valores numéricos exactos quedan reservados para `DEBUG_UI`, de modo que el balance sigue siendo auditable durante desarrollo sin dominar la experiencia del jugador.

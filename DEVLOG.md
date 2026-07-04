@@ -106,8 +106,18 @@ La interfaz de decisiones separa ahora tres capas para reforzar el tono roguelik
 
 El tooltip general de la decisión deja de listar costes exactos por defecto. Su función pasa a ser informar el riesgo: porcentajes de ramas inmediatas, lectura favorable/problemática/mixta y probabilidades de consecuencias futuras cuando existen. Los valores numéricos exactos quedan reservados para `DEBUG_UI`, de modo que el balance sigue siendo auditable durante desarrollo sin dominar la experiencia del jugador.
 
-## v0.5.0 - Evolución de rasgos
+## v0.6.0 - Evolución de rasgos
 
 Los rasgos del monarca pasan a formar un árbol de 3 tiers. Cada run empieza con un rasgo común, puede evolucionar a raro al llegar al día 10 y a legendario al llegar al día 20. Las evoluciones no reemplazan lo anterior: forman una cadena del reinado y suman efectos `onAcquire` y pasivos diarios.
 
 Este cambio refuerza la identidad roguelike de cada partida sin tocar el `EventManager` ni reestructurar eventos. La amenaza mantiene polaridad inversa: reducirla es beneficioso y la UI lo comunica como favorable.
+
+## v0.6.0 - Noticias del Reino y Crisis abiertas
+
+- Añade **Noticias del Reino** como sistema de pasivos temporales de varios días (`state.news`) para temporadas, edictos, consecuencias y eventos. Las partidas antiguas migran `activeCrisis` a noticia estacional y `activeEdicts` a noticias de edicto.
+- Separa **Crisis abiertas** de las noticias: las crisis persistentes siguen usando `state.issues` internamente, pero la UI las presenta como conflictos con actor, tensión, confianza, días abiertos, presión diaria, recompensa y problemas posibles.
+- Las opciones de evento aceptan `addNews`, con apilado `refresh`, `replace`, `stack` o `ignore`; el cierre del día aplica `daily`, costes periódicos y caducidad.
+- La presión de crisis se calcula una vez al día por tipo, etapa y tensión, sin crear noticias internas duplicadas.
+- La tarjeta de Reinado se centra en rasgo, ambición y cadena de rasgos; edictos y temporadas aparecen ahora en Noticias del Reino.
+- Los chips narrativos distinguen 🧠 Memoria, 📰 Noticia, ⚖️ Crisis, ⏳ Consecuencia y 🎲 Azar.
+

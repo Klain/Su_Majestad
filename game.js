@@ -1,4 +1,4 @@
-const GAME_VERSION = "v0.5.0";
+const GAME_VERSION = "v0.6.0";
 const DEBUG_UI = false;
 const STORAGE_KEY = "su-majestad-save-v2";
 const LEGACY_STORAGE_KEY = "su-majestad-save-v1";
@@ -19,8 +19,8 @@ const tooltipTexts = {
   reign: {
     trait: "Rasgo inicial del monarca. Modifica el arranque de la partida y da identidad a este reinado.",
     ambition: "Objetivo secundario del reinado. Cumplirlo mejora el epílogo final.",
-    crisis: "Problema temporal que altera recursos y aumenta la presencia de ciertos asuntos en el consejo.",
-    edict: "Política pasiva activa. Aplica efectos recurrentes mientras dure."
+    crisis: "Conflicto persistente con actor, tensión y confianza.",
+    edict: "Edicto convertido en noticia temporal del reino."
   },
   issues: {
     tension: "Indica lo cerca que está este conflicto de escalar.",
@@ -29,9 +29,11 @@ const tooltipTexts = {
     daysOpen: "Tiempo que el asunto lleva sin resolverse."
   },
   chips: {
-    uncertain: "Hay azar o consecuencias no totalmente visibles.",
-    memory: "La decisión quedará registrada en la memoria política del reino.",
-    conflict: "La decisión puede crear, modificar, escalar o resolver un conflicto persistente.",
+    uncertain: "El resultado inmediato puede variar.",
+    memory: "Esta decisión quedará en la memoria del reino y puede afectar eventos futuros.",
+    news: "Esta decisión creará una noticia temporal con efectos durante varios días.",
+    consequence: "Esta decisión puede volver más adelante como otro asunto del consejo.",
+    conflict: "Esta decisión puede crear, modificar, escalar o resolver una crisis persistente.",
     positive: "Este recurso tiende a mejorar.",
     negative: "Este recurso tiende a empeorar."
   }
@@ -145,14 +147,15 @@ const rulerTraitsById = Object.fromEntries(rulerTraits.map((trait) => [trait.id,
 const tierOneTraits = rulerTraits.filter((trait) => trait.tier === 1);
 validateTraitTree();
 
-const crises = [
+const seasonalNews = [
   { id: "drought", name: "Sequía", description: "La comida se agota más rápido.", duration: 4, families: ["food", "shortage", "people"], daily: { food: -2 } },
   { id: "war_rumors", name: "Rumores de guerra", description: "La frontera pesa más en el consejo.", duration: 4, families: ["border", "army", "diplomacy"], daily: { threat: 2 } },
   { id: "royal_fair", name: "Feria real", description: "El comercio domina la corte.", duration: 4, families: ["commerce", "people"], daily: { gold: 2 } },
   { id: "banditry", name: "Bandolerismo", description: "El crimen gana presencia.", duration: 4, families: ["crime", "public_order"], daily: { threat: 1, gold: -1 } },
   { id: "schism", name: "Cisma religioso", description: "La iglesia exige respuestas.", duration: 4, families: ["church", "nobility"], daily: { faith: -1 } },
   { id: "court_intrigue", name: "Intriga cortesana", description: "Las casas nobles mueven sus piezas.", duration: 4, families: ["nobility", "royal_family"], daily: { nobility: -1 } }
-];
+].map((item) => ({ title: item.name, text: item.description, type: "seasonal", source: "seasonal", stacking: "replace", ...item }));
+const crises = seasonalNews;
 
 const edicts = [
   { id: "granaries", name: "Graneros reales", description: "Protege comida; a veces cuesta oro.", daily: { food: 1 }, every: 3, cost: { gold: -2 } },
@@ -162,6 +165,16 @@ const edicts = [
   { id: "strong_tithe", name: "Diezmo reforzado", description: "Sube la fe; baja el favor popular.", daily: { faith: 1 }, every: 2, cost: { people: -1 } },
   { id: "local_levy", name: "Leva local", description: "Refuerza ejército; cansa al pueblo.", daily: { army: 1 }, every: 2, cost: { people: -1 } }
 ];
+
+const edictDuration = 5;
+const crisisPressureRules = {
+  border: [{ minStage: 0, minTension: 50, pressure: { title: "Alarma fronteriza", daily: { threat: 1 } } }, { minStage: 1, minTension: 70, pressure: { title: "Incursiones fronterizas", daily: { threat: 2, food: -1 } } }],
+  noble_claim: [{ minStage: 1, minTension: 60, pressure: { title: "Corte dividida", daily: { nobility: -1 } } }],
+  corruption: [{ minStage: 0, minTension: 60, pressure: { title: "Corrupción extendida", daily: { gold: -1, threat: 1 } } }],
+  shortage: [{ minStage: 0, minTension: 60, pressure: { title: "Escasez persistente", daily: { food: -1, people: -1 } } }],
+  tithe: [{ minStage: 0, minTension: 60, pressure: { title: "Diezmos disputados", daily: { faith: -1 } } }],
+  feud: [{ minStage: 1, minTension: 60, pressure: { title: "Rencillas armadas", daily: { threat: 1, nobility: -1 } } }]
+};
 
 const startingResources = { gold: 55, food: 55, army: 45, people: 55, nobility: 50, faith: 50, threat: 20 };
 const eventManager = new EventManager(events, { actors, families });
@@ -192,6 +205,7 @@ function newGame(selection = {}) {
     lastTraitPassiveDay: null,
     activeCrisis: null,
     activeEdicts: [],
+    news: [],
     edictChoices: [],
     completedObjectives: { issuesResolved: 0 },
     ...eventManager.createInitialMemory()
@@ -284,6 +298,7 @@ function render() {
   document.getElementById("dayProgress").style.width = `${(Math.min(state.day, MAX_DAYS) / MAX_DAYS) * 100}%`;
   renderResources();
   renderReign();
+  renderNews();
   renderTraitEvolution();
   renderEvents();
   renderMemory();
@@ -297,8 +312,13 @@ function render() {
 function normalizeRoguelikeState(saved) {
   saved.ambition = ambitions.find((item) => item.id === saved.ambition?.id) || saved.ambition || pickRandom(ambitions);
   migrateTraitState(saved);
-  saved.activeCrisis = saved.activeCrisis?.id ? { ...crises.find((item) => item.id === saved.activeCrisis.id), ...saved.activeCrisis } : null;
+  saved.news = Array.isArray(saved.news) ? saved.news : [];
+  saved.activeCrisis = saved.activeCrisis?.id ? { ...seasonalNews.find((item) => item.id === saved.activeCrisis.id), ...saved.activeCrisis } : null;
+  if (saved.activeCrisis?.remainingDays > 0) eventManager.addNews(saved, [normalizeSeasonalNews(saved.activeCrisis, saved.activeCrisis.remainingDays)], "seasonal", saved.activeCrisis.id);
+  saved.activeCrisis = null;
   saved.activeEdicts = Array.isArray(saved.activeEdicts) ? saved.activeEdicts.map((edict) => ({ ...edicts.find((item) => item.id === edict.id), ...edict })).filter((edict) => edict.id) : [];
+  saved.activeEdicts.forEach((edict) => eventManager.addNews(saved, [normalizeEdictNews(edict)], "edict", edict.id));
+  saved.activeEdicts = [];
   saved.edictChoices = Array.isArray(saved.edictChoices) ? saved.edictChoices : [];
   saved.completedObjectives = { issuesResolved: 0, ...(saved.completedObjectives || {}) };
   return saved;
@@ -363,10 +383,8 @@ function renderReign() {
   if (currentScreen !== "game" || !state) return;
   const panel = document.getElementById("reign");
   if (!panel) return;
-  const crisis = state.activeCrisis?.remainingDays > 0 ? tooltip(`${state.activeCrisis.name} (${state.activeCrisis.remainingDays}d)`, formatCrisisTooltip(state.activeCrisis)) : "Sin crisis";
-  const edict = state.activeEdicts?.length ? state.activeEdicts.map((item) => tooltip(item.name, formatEdictTooltip(item))).join(" · ") : "Sin edicto";
   const chain = formatTraitChain();
-  panel.innerHTML = `<div class="reign-grid"><span><strong>${tooltip("Rasgo", tooltipTexts.reign.trait)}</strong>${tooltip(chain, formatTraitPathTooltip())}</span><span><strong>${tooltip("Ambición", tooltipTexts.reign.ambition)}</strong>${tooltip(state.ambition.name, state.ambition.description)}</span><span><strong>${tooltip("Crisis", tooltipTexts.reign.crisis)}</strong>${crisis}</span><span><strong>${tooltip("Edicto", tooltipTexts.reign.edict)}</strong>${edict}</span></div>`;
+  panel.innerHTML = `<div class="reign-grid"><span><strong>${tooltip("Rasgo", tooltipTexts.reign.trait)}</strong>${tooltip(chain, formatTraitPathTooltip())}</span><span><strong>${tooltip("Ambición", tooltipTexts.reign.ambition)}</strong>${tooltip(state.ambition.name, state.ambition.description)}</span></div>`;
 }
 
 function renderTraitEvolution() {
@@ -434,7 +452,8 @@ function renderEdictOffer() {
 function chooseEdict(index) {
   const edict = state.edictChoices[index];
   if (!edict) return;
-  state.activeEdicts = [{ ...edict, chosenDay: state.day }];
+  addNews(normalizeEdictNews({ ...edict, chosenDay: state.day }));
+  state.activeEdicts = [];
   if (edict.tags?.length) eventManager.addTags(state, edict.tags);
   state.edictChoices = [];
   save();
@@ -442,10 +461,9 @@ function chooseEdict(index) {
 }
 
 function prepareSeasonalCrisis() {
-  if (state.activeCrisis?.remainingDays > 0) return;
   if (state.day === 1 || (state.day - 1) % 7 !== 0) return;
-  const crisis = pickRandom(crises);
-  state.activeCrisis = { ...crisis, remainingDays: crisis.duration };
+  const news = pickRandom(seasonalNews);
+  addNews(normalizeSeasonalNews(news));
 }
 
 function prepareEdictOffer() {
@@ -454,14 +472,8 @@ function prepareEdictOffer() {
 
 function applyDailyRoguelikeSystems() {
   applyTraitPassives();
-  if (state.activeCrisis?.remainingDays > 0) {
-    applyResourceDelta(state.resources, state.activeCrisis.daily);
-    state.activeCrisis.remainingDays -= 1;
-  }
-  (state.activeEdicts || []).forEach((edict) => {
-    applyResourceDelta(state.resources, edict.daily);
-    if (edict.every && state.day % edict.every === 0) applyResourceDelta(state.resources, edict.cost);
-  });
+  applyNewsEffects();
+  applyCrisisPressures();
   checkOutcome();
 }
 
@@ -474,23 +486,82 @@ function applyTraitPassives() {
   state.lastTraitPassiveDay = state.day;
 }
 
+function normalizeSeasonalNews(item, remainingDays = null) {
+  return { id: item.id, title: item.title || item.name, text: item.text || item.description, type: "seasonal", source: "seasonal", duration: item.duration || remainingDays || 4, remainingDays: remainingDays ?? item.remainingDays ?? item.duration ?? 4, daily: item.daily || {}, families: item.families || [], stacking: "replace" };
+}
+
+function normalizeEdictNews(edict) {
+  return { id: edict.id, title: edict.title || edict.name, text: edict.text || edict.description, type: "edict", source: "edict", sourceId: edict.id, duration: edict.duration || edictDuration, remainingDays: edict.remainingDays || edict.duration || edictDuration, daily: edict.daily || {}, every: edict.every || null, cost: edict.cost || null, families: edict.families || edict.tags || [], stacking: "replace" };
+}
+
+function addNews(newsItem) {
+  eventManager.addNews(state, [newsItem], newsItem.source || "event", newsItem.sourceId || null);
+}
+
+function applyNewsEffects() {
+  state.news = Array.isArray(state.news) ? state.news : [];
+  state.news.forEach((item) => {
+    applyResourceDelta(state.resources, item.daily);
+    if (item.every && item.cost) {
+      const elapsed = Math.max(0, (item.duration || item.remainingDays || 1) - (item.remainingDays || 0));
+      if ((elapsed + 1) % item.every === 0) applyResourceDelta(state.resources, item.cost);
+    }
+    item.remainingDays -= 1;
+  });
+  state.news = state.news.filter((item) => item.remainingDays > 0);
+}
+
+function getCrisisPressure(issue) {
+  const rules = crisisPressureRules[issue.type] || [];
+  return rules.filter((rule) => (issue.stage || 0) >= rule.minStage && (issue.tension || 0) >= rule.minTension).pop()?.pressure || null;
+}
+
+function applyCrisisPressures() {
+  (state.issues || []).forEach((issue) => {
+    const pressure = getCrisisPressure(issue);
+    if (pressure?.daily) applyResourceDelta(state.resources, pressure.daily);
+  });
+}
+
+function renderNews() {
+  if (currentScreen !== "game" || !state) return;
+  const panel = document.getElementById("news");
+  if (!panel) return;
+  const news = state.news || [];
+  const summary = news.length ? news.slice(0, 4).map((item) => `${item.title} · ${item.remainingDays} día${item.remainingDays === 1 ? "" : "s"}`).join(" · ") : "No hay noticias activas. Por ahora.";
+  panel.innerHTML = `<details class="compact-details"><summary><span>Noticias del Reino</span><strong>${summary}</strong></summary>${news.length ? news.slice(0, 4).map((item) => `<article class="news-row"><strong>${tooltip(item.title, formatNewsTooltip(item))}</strong><span>${item.remainingDays} día${item.remainingDays === 1 ? "" : "s"}</span></article>`).join("") : `<p>No hay noticias activas. Por ahora.</p>`}</details>`;
+}
+
+function formatNewsTooltip(item) {
+  return `${item.title}\n\n${item.text}\n\nEfecto:\n${formatQualitativeEffects(item.daily)}\n\nDuración:\nQuedan ${item.remainingDays} día${item.remainingDays === 1 ? "" : "s"}.\n\nOrigen:\n${formatNewsSource(item.source)}.`;
+}
+
+function formatQualitativeEffects(effects = {}) {
+  const parts = Object.entries(effects).filter(([key, value]) => resourceMeta[key] && value !== 0).map(([key, value]) => `${resourceMeta[key][0]} ${resourceTone(key, value) === "positive" ? "mejora" : "empeora"} al final de cada día`);
+  return parts.length ? parts.join("; ") + "." : "No altera recursos directamente.";
+}
+
+function formatNewsSource(source) {
+  return ({ edict: "Edicto real", event: "Acontecimiento del reino", consequence: "Consecuencia", seasonal: "Temporada", crisis: "Crisis abierta" })[source] || "Acontecimiento del reino";
+}
+
 function renderIssues() {
   if (currentScreen !== "game" || !state) return;
   const panel = document.getElementById("issues");
   if (!panel) return;
   const issues = state.issues || [];
   const summary = issues.length
-    ? `${issues.length} conflicto${issues.length === 1 ? "" : "s"} activo${issues.length === 1 ? "" : "s"}: ${issues.slice(0, 2).map((issue) => formatIssueType(issue.type)).join(" · ")}${issues.length > 2 ? "…" : ""}`
-    : "No hay conflictos abiertos. Por ahora.";
+    ? `${issues.length} crisis abierta${issues.length === 1 ? "" : "s"}: ${issues.slice(0, 2).map((issue) => formatIssueType(issue.type)).join(" · ")}${issues.length > 2 ? "…" : ""}`
+    : "No hay crisis abiertas. Por ahora.";
   panel.innerHTML = `
     <details class="compact-details">
-      <summary><span>Issues activos</span><strong>${summary}</strong></summary>
+      <summary><span>Crisis abiertas</span><strong>${summary}</strong></summary>
       ${issues.length ? issues.map((issue) => {
         const issueTags = (issue.tags || []).map(formatIssueTagForPlayer).join(" · ");
         const debugLine = DEBUG_UI ? `<small>ID: ${issue.id} · Actor: ${issue.actorId} · Etapa ${issue.stage}</small>` : "";
         return `
           <article class="issue-row">
-            <strong>${formatActorForPlayer(issue.actorId)}</strong>
+            <strong>${tooltip(formatActorForPlayer(issue.actorId), formatIssueTooltip(issue))}</strong>
             <span>${formatIssueType(issue.type)} · ${tooltip(formatIssueStage(issue), tooltipTexts.issues.stage)} · ${tooltip(formatDaysOpen(issue.daysActive), tooltipTexts.issues.daysOpen)}</span>
             <span>${tooltip(`Tensión ${formatTensionForPlayer(issue.tension)}`, tooltipTexts.issues.tension)} · ${tooltip(`Confianza ${formatTrustForPlayer(issue.trust)}`, tooltipTexts.issues.trust)}</span>
             <small>${issueTags ? `Motivo: ${issueTags}` : "Motivo: asunto aún difuso"}</small>
@@ -500,6 +571,11 @@ function renderIssues() {
       }).join("") : ""}
     </details>
   `;
+}
+
+function formatIssueTooltip(issue) {
+  const pressure = getCrisisPressure(issue);
+  return `Crisis de ${formatActorForPlayer(issue.actorId)}\n\nActor:\n${formatActorForPlayer(issue.actorId)}\n\nSituación:\n${formatIssueType(issue.type)}${(issue.tags || []).length ? ` (${(issue.tags || []).map(formatIssueTagForPlayer).join(", ")})` : ""}.\n\nIntensidad:\n${capitalize(formatTensionForPlayer(issue.tension))}. La crisis puede escalar si la tensión aumenta.\n\nConfianza:\n${capitalize(formatTrustForPlayer(issue.trust))}.\n\nPresión actual:\n${pressure ? `${pressure.title}: ${formatQualitativeEffects(pressure.daily)}` : "Sin presión diaria por ahora."}\n\nRecompensa si se resuelve:\n${issue.reward?.text || "La corona ganará estabilidad política."}\n\nSi se abandona:\n${issue.unresolvedProblem?.text || "La tensión acumulada puede traer complicaciones futuras."}\n\nSi pierde toda confianza:\n${issue.trustProblem?.text || "El actor podría dejar de cooperar con el trono."}`;
 }
 
 function formatIssueType(type) {
@@ -644,7 +720,7 @@ function buildEpilogue() {
   else if (r.gold <= 15) title = "El Rey Endeudado";
   else if (r.threat <= 25 && (state.completedObjectives?.issuesResolved || 0) >= 2) title = "El Justo";
   else if (r.army >= 70 && r.people < 40) title = "El Tirano Necesario";
-  const text = `${ambitionWon ? "La ambición de " + state.ambition.name + " se cumplió" : "La ambición de " + state.ambition.name + " quedó incompleta"}. Recursos finales: oro ${r.gold}, comida ${r.food}, ejército ${r.army}, pueblo ${r.people}, nobleza ${r.nobility}, fe ${r.faith}, amenaza ${r.threat}. Issues resueltos: ${state.completedObjectives?.issuesResolved || 0}; activos: ${(state.issues || []).length}.`;
+  const text = `${ambitionWon ? "La ambición de " + state.ambition.name + " se cumplió" : "La ambición de " + state.ambition.name + " quedó incompleta"}. Recursos finales: oro ${r.gold}, comida ${r.food}, ejército ${r.army}, pueblo ${r.people}, nobleza ${r.nobility}, fe ${r.faith}, amenaza ${r.threat}. Crisis resueltas: ${state.completedObjectives?.issuesResolved || 0}; activos: ${(state.issues || []).length}.`;
   return { title, text, ambitionWon };
 }
 
@@ -668,7 +744,8 @@ function formatChoiceTooltip(option) {
   else parts.push("Decisión de efecto previsible.");
   if (option.defer?.length) parts.push(formatDeferredProbabilityText(option.defer));
   if (option.addTags?.length) parts.push("Dejará memoria política.");
-  if (option.issues?.length) parts.push("Puede alterar un conflicto persistente.");
+  if (option.addNews?.length) parts.push("Creará una noticia temporal del reino.");
+  if (option.issues?.length) parts.push("Puede alterar una crisis persistente.");
   if (DEBUG_UI) {
     const directEffects = option.outcomes?.length ? summarizeWeightedOutcomes(option.outcomes) : (option.immediate || option.effects || {});
     const effectText = formatEffectsText(directEffects);
@@ -798,7 +875,7 @@ function formatChoicePreview(option) {
   const uniqueChips = dedupeChips(chips);
   const visible = uniqueChips.slice(0, 4);
   if (uniqueChips.length > 4) visible[3] = { icon: "✦", text: "+ más" };
-  if (!visible.length) visible.push({ icon: "❓", text: "Incierta" });
+  if (!visible.length) visible.push({ icon: "🎲", text: "Azar" });
   return visible.map(({ icon, text, tone = "", tooltipText = null }) => tooltip(`${icon} ${text}`, tooltipText || tooltipTextForChip(tone, text), `effect-chip ${tone}`)).join("");
 }
 
@@ -862,7 +939,7 @@ function formatOutcomeChips(outcomes) {
     .filter(([key, value]) => resourceMeta[key] && value !== 0)
     .sort(([, a], [, b]) => Math.abs(b) - Math.abs(a))
     .map(([key, value]) => formatImpactChip(key, value, { probable: true, variable: (directions[key]?.size || 0) > 1 }));
-  chips.unshift({ icon: "❓", text: "Incierta", tone: "uncertain" });
+  chips.unshift({ icon: "🎲", text: "Azar", tone: "uncertain" });
   return chips;
 }
 
@@ -898,8 +975,10 @@ function dedupeChips(chips) {
 function formatStoryHookChips(option) {
   const hooks = [];
   if (option.addTags?.length) hooks.push({ icon: "🧠", text: "Memoria", tone: "memory" });
-  if (option.defer?.length) hooks.push({ icon: "❓", text: "Incierta", tone: "uncertain" });
-  if (option.issues?.length) hooks.push({ icon: "⚖️", text: "Conflicto", tone: "conflict" });
+  if (option.addNews?.length) hooks.push({ icon: "📰", text: "Noticia", tone: "news" });
+  if (option.issues?.length) hooks.push({ icon: "⚖️", text: "Crisis", tone: "conflict" });
+  if (option.defer?.length) hooks.push({ icon: "⏳", text: "Consecuencia", tone: "consequence" });
+  if (option.outcomes?.length) hooks.push({ icon: "🎲", text: "Azar", tone: "uncertain" });
   return hooks;
 }
 
@@ -913,6 +992,8 @@ function tooltip(label, text, className = "") {
 function tooltipTextForChip(tone, text) {
   if (tone === "uncertain" || text === "Incierta") return tooltipTexts.chips.uncertain;
   if (tone === "memory") return tooltipTexts.chips.memory;
+  if (tone === "news") return tooltipTexts.chips.news;
+  if (tone === "consequence") return tooltipTexts.chips.consequence;
   if (tone === "conflict") return tooltipTexts.chips.conflict;
   if (tone === "positive" || text.includes("↑")) return tooltipTexts.chips.positive;
   if (tone === "negative" || text.includes("↓")) return tooltipTexts.chips.negative;
@@ -1052,7 +1133,7 @@ function renderEnding() {
   const history = (state.history || []).slice(-3).reverse();
   const pending = state.pendingEvents || [];
   card.className = `ending-card ${won ? "win" : "lose"}`;
-  card.innerHTML = `<p class="eyebrow">${won ? "Victoria" : "Derrota"}</p><h2>${epilogue.title}</h2><p>${won ? "La corte recordará este gobierno como una historia cerrada." : `Tu reinado cayó en el día ${state.day}. La corte recordará este gobierno como una advertencia.`}</p><p>${epilogue.text}</p><div class="run-summary"><strong>Ambición:</strong> ${state.ambition.name} — ${epilogue.ambitionWon ? "cumplida" : "La ambición quedó incompleta."}<br><strong>Rasgos:</strong> ${formatTraitChain()}<br><strong>Día alcanzado:</strong> ${Math.min(state.day, MAX_DAYS)}</div>${won ? "" : `<p class="death-cause">Causa de derrota: ${getDeathCause()}</p>`}<div class="run-summary"><strong>Recursos finales:</strong> ${Object.entries(resourceMeta).map(([key,[name]]) => `${name} ${state.resources[key]}`).join(" · ")}<br><strong>Issues resueltos:</strong> ${state.completedObjectives?.issuesResolved || 0}<br><strong>Issues activos restantes:</strong> ${(state.issues || []).length}</div><h3>Últimas decisiones importantes</h3><ul class="chronicle-list">${history.length ? history.map((item) => `<li>Día ${item.day}: ${item.choice} (${item.eventTitle})</li>`).join("") : "<li>La crónica quedó casi en blanco.</li>"}</ul>${pending.length ? `<p>Aún quedaban consecuencias pendientes.</p><ul class="chronicle-list">${pending.map((item) => `<li>Día ${item.dueDay || "?"}: ${item.eventId || item.id || "consecuencia"}</li>`).join("")}</ul>` : ""}<details><summary>Ver crónica</summary><ul class="chronicle-list">${(state.history || []).map((item) => `<li>Día ${item.day}: ${item.choice} (${item.eventTitle})${item.resultText ? ` — ${item.resultText}` : ""}</li>`).join("") || "<li>Sin decisiones registradas.</li>"}</ul></details><div class="setup-actions"><button id="endingNewRunButton" class="primary-button" type="button">Nuevo reinado</button><button id="endingMenuButton" class="secondary-button" type="button">Volver al menú</button><button id="copySummaryButton" class="secondary-button" type="button">Copiar resumen</button></div>`;
+  card.innerHTML = `<p class="eyebrow">${won ? "Victoria" : "Derrota"}</p><h2>${epilogue.title}</h2><p>${won ? "La corte recordará este gobierno como una historia cerrada." : `Tu reinado cayó en el día ${state.day}. La corte recordará este gobierno como una advertencia.`}</p><p>${epilogue.text}</p><div class="run-summary"><strong>Ambición:</strong> ${state.ambition.name} — ${epilogue.ambitionWon ? "cumplida" : "La ambición quedó incompleta."}<br><strong>Rasgos:</strong> ${formatTraitChain()}<br><strong>Día alcanzado:</strong> ${Math.min(state.day, MAX_DAYS)}</div>${won ? "" : `<p class="death-cause">Causa de derrota: ${getDeathCause()}</p>`}<div class="run-summary"><strong>Recursos finales:</strong> ${Object.entries(resourceMeta).map(([key,[name]]) => `${name} ${state.resources[key]}`).join(" · ")}<br><strong>Crisis resueltas:</strong> ${state.completedObjectives?.issuesResolved || 0}<br><strong>Crisis abiertas restantes:</strong> ${(state.issues || []).length}</div><h3>Últimas decisiones importantes</h3><ul class="chronicle-list">${history.length ? history.map((item) => `<li>Día ${item.day}: ${item.choice} (${item.eventTitle})</li>`).join("") : "<li>La crónica quedó casi en blanco.</li>"}</ul>${pending.length ? `<p>Aún quedaban consecuencias pendientes.</p><ul class="chronicle-list">${pending.map((item) => `<li>Día ${item.dueDay || "?"}: ${item.eventId || item.id || "consecuencia"}</li>`).join("")}</ul>` : ""}<details><summary>Ver crónica</summary><ul class="chronicle-list">${(state.history || []).map((item) => `<li>Día ${item.day}: ${item.choice} (${item.eventTitle})${item.resultText ? ` — ${item.resultText}` : ""}</li>`).join("") || "<li>Sin decisiones registradas.</li>"}</ul></details><div class="setup-actions"><button id="endingNewRunButton" class="primary-button" type="button">Nuevo reinado</button><button id="endingMenuButton" class="secondary-button" type="button">Volver al menú</button><button id="copySummaryButton" class="secondary-button" type="button">Copiar resumen</button></div>`;
   document.getElementById("endingNewRunButton").addEventListener("click", openSetup);
   document.getElementById("endingMenuButton").addEventListener("click", () => setScreen("menu"));
   document.getElementById("copySummaryButton").addEventListener("click", copyChronicle);

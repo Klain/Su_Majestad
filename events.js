@@ -4,7 +4,7 @@ function event(id, title, text, options, extra = {}) {
 
 function normalizeOption(option) {
   const [label, effectsOrConfig, config = {}] = option;
-  if (effectsOrConfig && (effectsOrConfig.immediate || effectsOrConfig.effects || effectsOrConfig.outcomes || effectsOrConfig.defer || effectsOrConfig.addTags || effectsOrConfig.characters || effectsOrConfig.issues)) {
+  if (effectsOrConfig && (effectsOrConfig.immediate || effectsOrConfig.effects || effectsOrConfig.outcomes || effectsOrConfig.defer || effectsOrConfig.addTags || effectsOrConfig.addNews || effectsOrConfig.characters || effectsOrConfig.issues)) {
     return { label, immediate: {}, ...effectsOrConfig };
   }
   return { label, immediate: effectsOrConfig || {}, ...config };

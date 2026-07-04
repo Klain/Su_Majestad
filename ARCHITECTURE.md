@@ -285,7 +285,7 @@ La pantalla `ending` usa el estado guardado para construir una crónica final: e
 
 ## Árbol evolutivo de rasgos
 
-Desde `v0.5.0`, `rulerTraits` ya no describe solo ventajas iniciales pequeñas. Cada rasgo tiene `id`, `name`, `tier`, `tierName`, `family`, `description`, `onAcquire`, `passive`, `evolvesTo` y, salvo los Tier 1, `parentId`.
+Desde `v0.6.0`, `rulerTraits` ya no describe solo ventajas iniciales pequeñas. Cada rasgo tiene `id`, `name`, `tier`, `tierName`, `family`, `description`, `onAcquire`, `passive`, `evolvesTo` y, salvo los Tier 1, `parentId`.
 
 ### Estado persistente
 
@@ -327,3 +327,13 @@ La UI solo ofrece ids listados en `evolvesTo` del último rasgo de `traitPath`, 
 | Amenaza | Vigilante | Ojos en la Muralla / Implacable / Ley de Hierro | Red de Atalayas, Guardia de Caminos, Mano Dura, El Pacificador, Reino Ordenado, Paz Armada |
 
 `validateTraitTree()` se ejecuta al cargar `game.js` y comprueba ids duplicados, destinos de `evolvesTo`, ausencia de `parentId` en Tier 1 y coherencia padre-hijo entre Tier 1, Tier 2 y Tier 3.
+
+## v0.6.0 - Noticias del Reino y Crisis abiertas
+
+- Añade **Noticias del Reino** como sistema de pasivos temporales de varios días (`state.news`) para temporadas, edictos, consecuencias y eventos. Las partidas antiguas migran `activeCrisis` a noticia estacional y `activeEdicts` a noticias de edicto.
+- Separa **Crisis abiertas** de las noticias: las crisis persistentes siguen usando `state.issues` internamente, pero la UI las presenta como conflictos con actor, tensión, confianza, días abiertos, presión diaria, recompensa y problemas posibles.
+- Las opciones de evento aceptan `addNews`, con apilado `refresh`, `replace`, `stack` o `ignore`; el cierre del día aplica `daily`, costes periódicos y caducidad.
+- La presión de crisis se calcula una vez al día por tipo, etapa y tensión, sin crear noticias internas duplicadas.
+- La tarjeta de Reinado se centra en rasgo, ambición y cadena de rasgos; edictos y temporadas aparecen ahora en Noticias del Reino.
+- Los chips narrativos distinguen 🧠 Memoria, 📰 Noticia, ⚖️ Crisis, ⏳ Consecuencia y 🎲 Azar.
+

@@ -2,6 +2,17 @@
 
 Todas las versiones del proyecto deben usar formato semver y actualizar este archivo cuando haya cambios importantes.
 
+## v0.4.1 - 2026-07-04
+
+### Cambios realizados
+- Se añade un sistema propio de tooltips accesibles con `data-tooltip`, compatible con ratón, teclado y toque en móvil.
+- Recursos, Reinado, Issues activos y chips de consecuencias explican su función sin revelar fórmulas internas.
+- Los tooltips se pueden cerrar al tocar fuera, al abrir otro tooltip o con Escape.
+- Se actualiza la versión a `v0.4.1`.
+
+### Correcciones
+- Los tooltips dentro de botones de decisión no disparan la elección salvo que se toque fuera de la zona de ayuda.
+
 ## v0.4.0 - 2026-07-04
 
 ### Cambios realizados

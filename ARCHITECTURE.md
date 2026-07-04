@@ -4,7 +4,7 @@
 
 - `index.html`: estructura de la aplicación, contenedores `menuScreen`, `setupScreen`, `gameScreen` y `endingScreen`, puntos de montaje de la interfaz y carga de scripts estáticos para GitHub Pages.
 - `style.css`: estilos visuales, responsive móvil/escritorio y componentes de cartas, recursos, mensajes, memoria e issues.
-- `game.js`: estado principal, `currentScreen`, setup de nueva run, bucle de partida, renderizado, guardado, carga, pantalla final y constante `GAME_VERSION`.
+- `game.js`: estado principal, `currentScreen`, setup de nueva run, bucle de partida, renderizado, tooltips reutilizables, guardado, carga, pantalla final y constante `GAME_VERSION`.
 - `event-manager.js`: motor de eventos, memoria, consecuencias, actores, issues, selección ponderada e interpolación de texto.
 - `events.js`: helpers globales `event`, `normalizeOption`, el catálogo agregado `events` y `registerEvents`.
 - `data/actors.js`: actores persistentes reutilizables por eventos y cadenas.
@@ -19,6 +19,15 @@
 - `ARCHITECTURE.md`: esta guía técnica.
 
 El proyecto sigue sin usar dependencias externas ni paso de build. Por eso los módulos son scripts clásicos cargados en orden desde `index.html`: primero helpers y catálogo agregado, después datos, después `EventManager` y finalmente `game.js`.
+
+
+## Tooltips accesibles
+
+`game.js` define `tooltipTexts` como diccionario de textos para recursos, Reinado, Issues activos y chips de consecuencias. El helper `tooltip(label, text, className)` devuelve un activador con `data-tooltip`, `aria-label`, foco de teclado y clase `tooltip-trigger`.
+
+Después de renderizar la pantalla de partida, `render()` llama a `initTooltips()`. Esta función registra interacciones de ratón, foco y toque sobre los activadores, crea una única burbuja flotante `#tooltipBubble` con `role="tooltip"` y la posiciona según escritorio o móvil. Tocar otro tooltip reemplaza el activo, tocar fuera cierra la burbuja y Escape también la oculta.
+
+Los tooltips no cambian mecánicas ni estado persistente: solo añaden ayuda contextual en la capa de presentación. En botones de decisión, el clic del activador detiene la propagación para que tocar exactamente un chip de ayuda no elija la opción por accidente.
 
 ## Cómo funciona el bucle del juego
 

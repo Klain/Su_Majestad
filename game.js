@@ -244,7 +244,7 @@ function renderReign() {
   if (!panel) return;
   const crisis = state.activeCrisis?.remainingDays > 0 ? tooltip(`${state.activeCrisis.name} (${state.activeCrisis.remainingDays}d)`, formatCrisisTooltip(state.activeCrisis)) : "Sin crisis";
   const edict = state.activeEdicts?.length ? state.activeEdicts.map((item) => tooltip(item.name, formatEdictTooltip(item))).join(" · ") : "Sin edicto";
-  panel.innerHTML = `<div class="reign-grid"><span><strong>Rasgo ${tooltip("ⓘ", tooltipTexts.reign.trait, "icon")}</strong>${tooltip(state.rulerTrait.name, formatTraitTooltip(state.rulerTrait))}</span><span><strong>Ambición ${tooltip("ⓘ", tooltipTexts.reign.ambition, "icon")}</strong>${tooltip(state.ambition.name, state.ambition.description)}</span><span><strong>Crisis ${tooltip("ⓘ", tooltipTexts.reign.crisis, "icon")}</strong>${crisis}</span><span><strong>Edicto ${tooltip("ⓘ", tooltipTexts.reign.edict, "icon")}</strong>${edict}</span></div>`;
+  panel.innerHTML = `<div class="reign-grid"><span><strong>${tooltip("Rasgo", tooltipTexts.reign.trait)}</strong>${tooltip(state.rulerTrait.name, formatTraitTooltip(state.rulerTrait))}</span><span><strong>${tooltip("Ambición", tooltipTexts.reign.ambition)}</strong>${tooltip(state.ambition.name, state.ambition.description)}</span><span><strong>${tooltip("Crisis", tooltipTexts.reign.crisis)}</strong>${crisis}</span><span><strong>${tooltip("Edicto", tooltipTexts.reign.edict)}</strong>${edict}</span></div>`;
 }
 
 function renderEdictOffer() {

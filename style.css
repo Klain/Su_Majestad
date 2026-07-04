@@ -97,7 +97,8 @@ h2 { margin: 0; }
 }
 .option-button:not(:disabled):active { transform: scale(0.99); }
 .option-button:disabled { background: rgba(59, 42, 79, 0.58); }
-.option-title { display: block; line-height: 1.22; }
+.option-title { align-items: start; display: flex; gap: 0.4rem; justify-content: space-between; line-height: 1.22; }
+.option-help { flex: 0 0 auto; margin-top: -0.2rem; }
 .effects { color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px; font-size: 0.78rem; font-weight: 800; }
 .effect-chip {
   align-items: center;
@@ -115,6 +116,67 @@ h2 { margin: 0; }
 .effect-chip.uncertain { border-color: rgba(180, 124, 255, 0.24); color: #e0d2ff; }
 .effect-chip.memory { border-color: rgba(244, 195, 91, 0.24); color: #ffe1a3; }
 .effect-chip.conflict { border-color: rgba(244, 195, 91, 0.28); color: #f8ebd8; }
+
+.tooltip-trigger {
+  align-items: center;
+  border-radius: 999px;
+  cursor: help;
+  display: inline-flex;
+  min-height: 30px;
+  outline: none;
+  position: relative;
+  text-decoration: underline dotted rgba(244, 195, 91, 0.42);
+  text-underline-offset: 3px;
+}
+
+.tooltip-trigger.icon {
+  color: var(--muted);
+  font-size: 0.78rem;
+  justify-content: center;
+  min-height: 28px;
+  min-width: 28px;
+  text-decoration: none;
+}
+
+.tooltip-trigger.effect-chip { cursor: help; min-height: 32px; text-decoration: none; }
+.tooltip-trigger:hover, .tooltip-trigger:focus-visible, .tooltip-trigger.tooltip-active { color: var(--gold); }
+.tooltip-trigger:focus-visible { box-shadow: 0 0 0 2px rgba(244, 195, 91, 0.34); }
+
+.tooltip-bubble {
+  background: rgba(18, 13, 25, 0.98);
+  border: 1px solid rgba(244, 195, 91, 0.36);
+  border-radius: 14px;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.48);
+  color: #f8ebd8;
+  font-size: 0.86rem;
+  font-weight: 750;
+  line-height: 1.35;
+  max-width: 320px;
+  opacity: 0;
+  padding: 0.75rem 0.85rem;
+  pointer-events: none;
+  position: absolute;
+  transform: translateY(4px);
+  transition: opacity 0.14s ease, transform 0.14s ease;
+  visibility: hidden;
+  z-index: 1000;
+}
+
+.tooltip-bubble.visible {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+}
+
+@media (max-width: 719px) {
+  .tooltip-bubble {
+    border-color: rgba(180, 124, 255, 0.42);
+    font-size: 0.9rem;
+    position: fixed;
+    text-align: center;
+  }
+}
+
 
 .actions {
   background: linear-gradient(180deg, rgba(23, 17, 31, 0), rgba(23, 17, 31, 0.94) 35%, rgba(23, 17, 31, 0.98));

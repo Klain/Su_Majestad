@@ -1,9 +1,41 @@
-const GAME_VERSION = "v0.4.0";
+const GAME_VERSION = "v0.4.2";
 const DEBUG_UI = false;
 const STORAGE_KEY = "su-majestad-save-v2";
 const LEGACY_STORAGE_KEY = "su-majestad-save-v1";
 const MAX_DAYS = 30;
 const EVENTS_PER_DAY = 2;
+
+
+const tooltipTexts = {
+  resources: {
+    gold: "Sirve para pagar obras, sobornos, soldados y reparaciones. Si el oro cae a 0, la corona entra en bancarrota.",
+    food: "Mide reservas y abastecimiento. Si la comida cae a 0, llega la hambruna al reino.",
+    army: "Representa soldados, disciplina y capacidad de imponer orden. Si el ejército cae a 0, la corona queda indefensa.",
+    people: "Mide apoyo popular y bienestar común. Si el pueblo cae a 0, la paciencia del reino se rompe y estalla la revuelta.",
+    nobility: "Mide apoyo de casas nobles, linajes y corte. Si la nobleza cae a 0, los grandes señores se vuelven contra el trono.",
+    faith: "Mide legitimidad religiosa y apoyo de la Iglesia. Si la fe cae a 0, el trono pierde su amparo espiritual.",
+    threat: "Mide peligro acumulado, crimen, guerra e inestabilidad. Si llega a 100, el reino queda consumido por la crisis."
+  },
+  reign: {
+    trait: "Rasgo inicial del monarca. Modifica el arranque de la partida y da identidad a este reinado.",
+    ambition: "Objetivo secundario del reinado. Cumplirlo mejora el epílogo final.",
+    crisis: "Problema temporal que altera recursos y aumenta la presencia de ciertos asuntos en el consejo.",
+    edict: "Política pasiva activa. Aplica efectos recurrentes mientras dure."
+  },
+  issues: {
+    tension: "Indica lo cerca que está este conflicto de escalar.",
+    trust: "Indica la confianza de la facción o actor hacia la corona.",
+    stage: "Muestra el nivel narrativo del conflicto: inicial, escalado o crisis abierta.",
+    daysOpen: "Tiempo que el asunto lleva sin resolverse."
+  },
+  chips: {
+    uncertain: "Esta decisión puede tener consecuencias ocultas o resultados variables.",
+    memory: "Esta decisión dejará memoria en el reino y puede afectar eventos futuros.",
+    conflict: "Esta decisión puede crear, modificar, escalar o resolver un conflicto persistente.",
+    positive: "Este recurso probablemente mejorará.",
+    negative: "Este recurso probablemente empeorará."
+  }
+};
 
 const resourceMeta = {
   gold: ["Oro", "🪙"],
@@ -170,6 +202,7 @@ function render() {
   renderIssues();
   renderEdictOffer();
   renderMessage();
+  initTooltips();
   document.getElementById("endDayButton").disabled = state.gameOver || state.resolved.length < EVENTS_PER_DAY;
 }
 
@@ -188,7 +221,7 @@ function renderResources() {
   document.getElementById("resources").innerHTML = Object.entries(resourceMeta).map(([key, [name, icon]]) => {
     const value = state.resources[key];
     const classes = ["resource", key === "threat" ? "threat" : "", value <= 18 && key !== "threat" ? "low" : ""].join(" ");
-    return `<article class="${classes}"><div class="resource-top"><span class="resource-name">${icon} ${name}</span><span class="resource-value">${value}</span></div><div class="meter"><div class="meter-fill" style="width:${value}%"></div></div></article>`;
+    return `<article class="${classes}"><div class="resource-top"><span class="resource-name">${tooltip(`${icon} ${name}`, tooltipTexts.resources[key])}</span><span class="resource-value">${value}</span></div><div class="meter"><div class="meter-fill" style="width:${value}%"></div></div></article>`;
   }).join("");
 }
 
@@ -196,7 +229,7 @@ function renderEvents() {
   if (currentScreen !== "game" || !state) return;
   document.getElementById("events").innerHTML = state.todaysEvents.map((item, eventIndex) => {
     const resolved = state.resolved.includes(eventIndex) || state.gameOver;
-    const options = item.options.map((option, optionIndex) => `<button class="option-button" type="button" ${resolved ? "disabled" : ""} data-event="${eventIndex}" data-option="${optionIndex}"><span class="option-title">${option.label}</span><span class="effects chips" aria-label="Consecuencias previstas">${formatChoicePreview(option)}</span></button>`).join("");
+    const options = item.options.map((option, optionIndex) => `<button class="option-button" type="button" ${resolved ? "disabled" : ""} data-event="${eventIndex}" data-option="${optionIndex}"><span class="option-title"><span>${option.label}</span>${tooltip("ⓘ", formatChoiceTooltip(option), "icon option-help")}</span><span class="effects chips" aria-label="Consecuencias previstas">${formatChoicePreview(option)}</span></button>`).join("");
     return `<article class="event-card ${resolved ? "resolved" : ""}"><h3 class="event-title">${item.title}</h3><p class="event-text">${item.text}</p><div class="options">${options}</div></article>`;
   }).join("");
 
@@ -209,9 +242,9 @@ function renderReign() {
   if (currentScreen !== "game" || !state) return;
   const panel = document.getElementById("reign");
   if (!panel) return;
-  const crisis = state.activeCrisis?.remainingDays > 0 ? `${state.activeCrisis.name} (${state.activeCrisis.remainingDays}d)` : "Sin crisis";
-  const edict = state.activeEdicts?.length ? state.activeEdicts.map((item) => item.name).join(" · ") : "Sin edicto";
-  panel.innerHTML = `<div class="reign-grid"><span><strong>Rasgo</strong>${state.rulerTrait.name}</span><span><strong>Ambición</strong>${state.ambition.name}</span><span><strong>Crisis</strong>${crisis}</span><span><strong>Edicto</strong>${edict}</span></div>`;
+  const crisis = state.activeCrisis?.remainingDays > 0 ? tooltip(`${state.activeCrisis.name} (${state.activeCrisis.remainingDays}d)`, formatCrisisTooltip(state.activeCrisis)) : "Sin crisis";
+  const edict = state.activeEdicts?.length ? state.activeEdicts.map((item) => tooltip(item.name, formatEdictTooltip(item))).join(" · ") : "Sin edicto";
+  panel.innerHTML = `<div class="reign-grid"><span><strong>Rasgo ${tooltip("ⓘ", tooltipTexts.reign.trait, "icon")}</strong>${tooltip(state.rulerTrait.name, formatTraitTooltip(state.rulerTrait))}</span><span><strong>Ambición ${tooltip("ⓘ", tooltipTexts.reign.ambition, "icon")}</strong>${tooltip(state.ambition.name, state.ambition.description)}</span><span><strong>Crisis ${tooltip("ⓘ", tooltipTexts.reign.crisis, "icon")}</strong>${crisis}</span><span><strong>Edicto ${tooltip("ⓘ", tooltipTexts.reign.edict, "icon")}</strong>${edict}</span></div>`;
 }
 
 function renderEdictOffer() {
@@ -274,8 +307,8 @@ function renderIssues() {
         return `
           <article class="issue-row">
             <strong>${formatActorForPlayer(issue.actorId)}</strong>
-            <span>${formatIssueType(issue.type)} · ${formatIssueStage(issue)} · ${formatDaysOpen(issue.daysActive)}</span>
-            <span>Tensión ${formatTensionForPlayer(issue.tension)} · Confianza ${formatTrustForPlayer(issue.trust)}</span>
+            <span>${formatIssueType(issue.type)} · ${tooltip(formatIssueStage(issue), tooltipTexts.issues.stage)} · ${tooltip(formatDaysOpen(issue.daysActive), tooltipTexts.issues.daysOpen)}</span>
+            <span>${tooltip(`Tensión ${formatTensionForPlayer(issue.tension)}`, tooltipTexts.issues.tension)} · ${tooltip(`Confianza ${formatTrustForPlayer(issue.trust)}`, tooltipTexts.issues.trust)}</span>
             <small>${issueTags ? `Motivo: ${issueTags}` : "Motivo: asunto aún difuso"}</small>
             ${debugLine}
           </article>
@@ -445,6 +478,59 @@ function isAmbitionComplete() {
   return false;
 }
 
+function formatChoiceTooltip(option) {
+  const parts = [];
+  const directEffects = option.outcomes?.length ? summarizeWeightedOutcomes(option.outcomes) : (option.immediate || option.effects || {});
+  const effectText = formatEffectsText(directEffects);
+  if (effectText) parts.push(`Impacto previsto: ${effectText}.`);
+  if (option.outcomes?.length) parts.push(formatOutcomeProbabilityText(option.outcomes));
+  if (option.defer?.length) parts.push(formatDeferredProbabilityText(option.defer));
+  if (option.addTags?.length) parts.push("Dejará memoria política en el reino.");
+  if (option.issues?.length) parts.push("Puede alterar un conflicto persistente.");
+  return parts.filter(Boolean).join(" ") || "Decisión sin impacto visible inmediato; la corte observará el gesto.";
+}
+
+function summarizeWeightedOutcomes(outcomes = []) {
+  const combined = {};
+  outcomes.forEach((outcome) => {
+    Object.entries(outcome.immediate || outcome.effects || {}).forEach(([key, value]) => {
+      if (!resourceMeta[key] || value === 0) return;
+      combined[key] = Math.round((combined[key] || 0) + value * (outcome.probability || 1));
+    });
+  });
+  return combined;
+}
+
+function formatOutcomeProbabilityText(outcomes = []) {
+  const branches = outcomes.map((outcome) => {
+    const chance = Math.round((outcome.probability || 0) * 100);
+    const effects = formatEffectsText(outcome.immediate || outcome.effects || {});
+    return `${chance}%: ${effects || outcome.text || "resultado narrativo"}`;
+  });
+  return branches.length ? `Probabilidades: ${branches.join(" · ")}.` : "";
+}
+
+function formatDeferredProbabilityText(deferred = []) {
+  const lines = deferred.flatMap((item) => item.branches?.length ? [item.branches.map((branch, index) => `${Math.round((branch.probability || 0) * 100)}% rama ${index + 1}`).join(" / ")] : []);
+  return lines.length ? `Consecuencia futura posible: ${lines.join("; ")}.` : "Puede traer una consecuencia futura, sin probabilidad pública.";
+}
+
+function formatTraitTooltip(trait) {
+  return `Rasgo inicial: ${formatEffectsText(trait.effects)}.`;
+}
+
+function formatCrisisTooltip(crisis) {
+  const daily = formatEffectsText(crisis.daily);
+  return `${crisis.description}${daily ? ` Efecto diario mientras dure: ${daily}.` : ""}`;
+}
+
+function formatEdictTooltip(edict) {
+  const daily = formatEffectsText(edict.daily);
+  const cost = formatEffectsText(edict.cost);
+  return `${edict.description}${daily ? ` Efecto recurrente: ${daily}.` : ""}${cost ? ` Coste ocasional: ${cost}.` : ""}`;
+}
+
+
 function formatChoicePreview(option) {
   const chips = [];
   if (option.outcomes?.length) chips.push(...formatOutcomeChips(option.outcomes));
@@ -455,7 +541,7 @@ function formatChoicePreview(option) {
   const visible = uniqueChips.slice(0, 4);
   if (uniqueChips.length > 4) visible[3] = { icon: "✦", text: "+ más" };
   if (!visible.length) visible.push({ icon: "❓", text: "Incierta" });
-  return visible.map(({ icon, text, tone = "" }) => `<span class="effect-chip ${tone}">${icon} ${text}</span>`).join("");
+  return visible.map(({ icon, text, tone = "" }) => tooltip(`${icon} ${text}`, tooltipTextForChip(tone, text), `effect-chip ${tone}`)).join("");
 }
 
 function formatEffectChips(effects) {
@@ -502,6 +588,109 @@ function formatStoryHookChips(option) {
   if (option.issues?.length) hooks.push({ icon: "⚖️", text: "Conflicto", tone: "conflict" });
   return hooks;
 }
+
+
+function tooltip(label, text, className = "") {
+  if (!text) return label;
+  const classes = ["tooltip-trigger", className].filter(Boolean).join(" ");
+  return `<span class="${classes}" tabindex="0" role="button" aria-label="${escapeHtml(`${label}: ${text}`)}" data-tooltip="${escapeHtml(text)}">${label}</span>`;
+}
+
+function tooltipTextForChip(tone, text) {
+  if (tone === "uncertain" || text === "Incierta") return tooltipTexts.chips.uncertain;
+  if (tone === "memory") return tooltipTexts.chips.memory;
+  if (tone === "conflict") return tooltipTexts.chips.conflict;
+  if (tone === "positive" || text.includes("↑")) return tooltipTexts.chips.positive;
+  if (tone === "negative" || text.includes("↓")) return tooltipTexts.chips.negative;
+  return tooltipTexts.chips.uncertain;
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[char]));
+}
+
+function initTooltips() {
+  const triggers = document.querySelectorAll(".tooltip-trigger[data-tooltip]");
+  if (!triggers.length) { closeTooltip(); return; }
+  triggers.forEach((trigger) => {
+    if (trigger.dataset.tooltipReady) return;
+    trigger.dataset.tooltipReady = "true";
+    trigger.addEventListener("mouseenter", () => openTooltip(trigger));
+    trigger.addEventListener("focus", () => openTooltip(trigger));
+    trigger.addEventListener("mouseleave", () => closeTooltip(trigger));
+    trigger.addEventListener("blur", () => closeTooltip(trigger));
+    trigger.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (trigger.classList.contains("tooltip-active")) closeTooltip(trigger);
+      else openTooltip(trigger);
+    });
+  });
+}
+
+function openTooltip(trigger) {
+  const text = trigger?.dataset?.tooltip;
+  if (!text) return;
+  let bubble = document.getElementById("tooltipBubble");
+  if (!bubble) {
+    bubble = document.createElement("div");
+    bubble.id = "tooltipBubble";
+    bubble.className = "tooltip-bubble";
+    bubble.setAttribute("role", "tooltip");
+    document.body.appendChild(bubble);
+  }
+  document.querySelectorAll(".tooltip-active").forEach((node) => node.classList.remove("tooltip-active"));
+  trigger.classList.add("tooltip-active");
+  trigger.setAttribute("aria-describedby", "tooltipBubble");
+  bubble.textContent = text;
+  bubble.classList.add("visible");
+  positionTooltip(trigger, bubble);
+}
+
+function closeTooltip(trigger) {
+  const bubble = document.getElementById("tooltipBubble");
+  if (trigger) {
+    trigger.classList.remove("tooltip-active");
+    trigger.removeAttribute("aria-describedby");
+  } else {
+    document.querySelectorAll(".tooltip-active").forEach((node) => {
+      node.classList.remove("tooltip-active");
+      node.removeAttribute("aria-describedby");
+    });
+  }
+  if (bubble && (!trigger || !document.querySelector(".tooltip-active"))) bubble.classList.remove("visible");
+}
+
+function positionTooltip(trigger, bubble) {
+  const rect = trigger.getBoundingClientRect();
+  const margin = 12;
+  bubble.style.left = "";
+  bubble.style.top = "";
+  bubble.style.bottom = "";
+  if (window.matchMedia("(max-width: 719px)").matches) {
+    bubble.style.left = `${margin}px`;
+    bubble.style.right = `${margin}px`;
+    bubble.style.bottom = `calc(84px + env(safe-area-inset-bottom, 0px))`;
+    return;
+  }
+  bubble.style.right = "auto";
+  const bubbleWidth = Math.min(320, window.innerWidth - margin * 2);
+  bubble.style.maxWidth = `${bubbleWidth}px`;
+  const left = Math.max(margin, Math.min(rect.left + rect.width / 2 - bubbleWidth / 2, window.innerWidth - bubbleWidth - margin));
+  const top = rect.top > 110 ? rect.top + window.scrollY - bubble.offsetHeight - margin : rect.bottom + window.scrollY + margin;
+  bubble.style.left = `${left}px`;
+  bubble.style.top = `${top}px`;
+}
+
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".tooltip-trigger") && !event.target.closest("#tooltipBubble")) closeTooltip();
+});
+document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeTooltip(); });
+window.addEventListener("resize", () => {
+  const active = document.querySelector(".tooltip-active");
+  const bubble = document.getElementById("tooltipBubble");
+  if (active && bubble?.classList.contains("visible")) positionTooltip(active, bubble);
+});
 
 
 function hasValidSave() {

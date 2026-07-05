@@ -243,7 +243,24 @@ class EventManager {
     const forbidden = eventItem.forbiddenTags || [];
     const minDay = eventItem.minDay || 1;
     const maxDay = eventItem.maxDay || Infinity;
-    return state.day >= minDay && state.day <= maxDay && required.every((tag) => tags.has(tag)) && forbidden.every((tag) => !tags.has(tag));
+    return state.day >= minDay
+      && state.day <= maxDay
+      && required.every((tag) => tags.has(tag))
+      && forbidden.every((tag) => !tags.has(tag))
+      && this.meetsResourceConditions(eventItem.resourceConditions, state);
+  }
+
+  meetsResourceConditions(conditions, state) {
+    if (!conditions || typeof conditions !== "object") return true;
+    return Object.entries(conditions).every(([resource, rule]) => this.matchesResourceRule(resource, rule, state));
+  }
+
+  matchesResourceRule(resource, rule = {}, state) {
+    const value = state.resources?.[resource];
+    if (value === undefined) return false;
+    if (rule.min !== undefined && value < rule.min) return false;
+    if (rule.max !== undefined && value > rule.max) return false;
+    return true;
   }
 
   hasMatchingIssue(rule, state) {
@@ -301,7 +318,19 @@ class EventManager {
     const issueBonus = this.issueWeightBonus(item, state);
     const crisisBonus = this.crisisWeightBonus(item, state);
     const recencyPenalty = this.recentPenalty(item, state);
-    return Math.max(0.05, ((item.weight || 1) + affinity * 2 + issueBonus + crisisBonus) * recencyPenalty);
+    const resourceMultiplier = this.resourceWeightMultiplier(item.resourceWeights, state);
+    return Math.max(0.05, ((item.weight || 1) + affinity * 2 + issueBonus + crisisBonus) * resourceMultiplier * recencyPenalty);
+  }
+
+  resourceWeightMultiplier(resourceWeights, state) {
+    if (!Array.isArray(resourceWeights)) return 1;
+    return resourceWeights.reduce((multiplier, rule) => {
+      if (!rule || !rule.resource || rule.multiplier === undefined) return multiplier;
+      if (!this.matchesResourceRule(rule.resource, rule, state)) return multiplier;
+      const ruleMultiplier = Number(rule.multiplier);
+      if (!Number.isFinite(ruleMultiplier)) return multiplier;
+      return multiplier * Math.max(0, ruleMultiplier);
+    }, 1);
   }
 
   crisisWeightBonus(item, state) {

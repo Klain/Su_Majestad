@@ -337,3 +337,26 @@ La UI solo ofrece ids listados en `evolvesTo` del último rasgo de `traitPath`, 
 - La tarjeta de Reinado se centra en rasgo, ambición y cadena de rasgos; edictos y temporadas aparecen ahora en Noticias del Reino.
 - Los chips narrativos distinguen 🧠 Memoria, 📰 Noticia, ⚖️ Crisis, ⏳ Consecuencia y 🎲 Azar.
 
+
+## Condiciones y pesos por recursos
+
+El selector de `EventManager` integra dos campos opcionales para que un evento dependa del estado actual de los atributos del reino sin crear un sistema paralelo.
+
+- `resourceConditions`: objeto por recurso con `min` y/o `max`. Todas las reglas deben cumplirse para que el evento sea compatible. Si el recurso no existe en `state.resources`, la condición falla.
+- `resourceWeights`: lista de reglas `{ resource, min, max, multiplier }`. Cada regla cumplida multiplica el peso calculado del evento; si no se cumple, el evento sigue disponible con su peso normal. El multiplicador se aplica después de peso base, afinidades, issues y crisis, y antes de la penalización por repetición.
+
+Ejemplo:
+
+```js
+event("empty_granaries", "Graneros vacíos", "...", options, {
+  family: "food",
+  resourceConditions: { food: { max: 30 } }
+})
+
+event("royal_auditors", "Auditores reales", "...", options, {
+  family: "crown",
+  resourceWeights: [{ resource: "crown", min: 70, multiplier: 2 }]
+})
+```
+
+Ambos campos funcionan con cualquier atributo presente en `state.resources`, incluida `crown`, y son opcionales para mantener intactos los eventos existentes.

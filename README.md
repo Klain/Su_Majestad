@@ -1,6 +1,6 @@
 # Su Majestad
 
-**Versión actual:** `v0.6.1`
+**Versión actual:** `v0.6.2`
 
 `Su Majestad` es un roguelike de gestión de reino para móvil y escritorio, creado con HTML, CSS y JavaScript puro. La partida dura 30 días y cada jornada presenta asuntos del consejo que pueden cambiar recursos, abrir conflictos, recordar personajes o provocar consecuencias futuras.
 
@@ -93,6 +93,12 @@ A partir de ahora, cada cambio importante debe:
 - Añadir finales más específicos según memoria e historial.
 - Mejorar la presentación de personajes recurrentes, memoria e issues.
 - Diseñar migraciones explícitas para futuras versiones de guardado.
+
+## v0.6.2 - Aparición por atributos
+
+- Añade `resourceConditions` para eventos que solo aparecen cuando los atributos actuales cumplen mínimos o máximos.
+- Añade `resourceWeights` para aumentar o reducir el peso de eventos según atributos sin bloquearlos.
+- Las reglas funcionan con cualquier recurso del reino, incluida Corona.
 
 ## v0.6.1 - Corona
 

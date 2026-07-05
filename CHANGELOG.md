@@ -2,6 +2,17 @@
 
 Todas las versiones del proyecto deben usar formato semver y actualizar este archivo cuando haya cambios importantes.
 
+## v0.6.3 - 2026-07-05
+
+### Cambios realizados
+- Se reformula `data/families.js` con las 14 familias objetivo y descripciones de identidad aproximada.
+- Se mapean los eventos, actores y temporadas existentes a familias nuevas sin crear packs grandes de eventos.
+- Se añade compatibilidad por alias heredados para familias antiguas en catálogo, noticias, actores e historial reciente.
+- Se actualiza la versión a `v0.6.3`.
+
+### Correcciones
+- Las familias antiguas `commerce`, `church`, `border`, `crime`, `exploration`, `royal_family`, `disease`, `diplomacy`, `food` y `crown` siguen resolviendo a familias nuevas si aparecen en partidas guardadas o contenido legado.
+
 ## v0.6.2 - 2026-07-05
 
 ### Cambios realizados

@@ -66,10 +66,10 @@ registerEvents([
     "Incendio en el mercado",
     "Las lonas arden y los comerciantes piden ayuda inmediata.",
     [
-      ["Enviar cubas reales", { gold: -4, people: 3 }, { family: "commerce" }],
+      ["Enviar cubas reales", { gold: -4, people: 3 }, { family: "merchants" }],
       ["Dejar que se organicen", { people: -2, threat: 2 }]
     ],
-    { family: "commerce", families: ["commerce", "people"], weight: 1 }
+    { family: "merchants", families: ["merchants", "people"], weight: 1 }
   )
 ]);
 ```
@@ -94,7 +94,7 @@ event(
     ["Aceptar su gratitud", { gold: 5 }, { addTags: ["merchant_gratitude"] }],
     ["Pedir más impuestos", { gold: 8, people: -3 }, { addTags: ["taxed_merchants"] }]
   ],
-  { kind: "consequence", requiresTags: ["helped_market"], family: "commerce" }
+  { kind: "consequence", requiresTags: ["helped_market"], family: "merchants" }
 )
 ```
 
@@ -137,8 +137,8 @@ Ejemplo de ruta:
 ```js
 // data/events/chains/example-chain.js
 registerEvents([
-  event("example_start", "Inicio", "...", [["Actuar", {}, { defer: [{ delay: 4, eventId: "example_middle" }] }]], { family: "diplomacy" }),
-  event("example_middle", "Nudo", "...", [["Resolver", {}, { addTags: ["example_resolved"] }]], { kind: "consequence", family: "diplomacy" })
+  event("example_start", "Inicio", "...", [["Actuar", {}, { defer: [{ delay: 4, eventId: "example_middle" }] }]], { family: "diplomat" }),
+  event("example_middle", "Nudo", "...", [["Resolver", {}, { addTags: ["example_resolved"] }]], { kind: "consequence", family: "diplomat" })
 ]);
 ```
 
@@ -153,7 +153,7 @@ Añade actores persistentes en `data/actors.js` con esta forma:
   id: "dario",
   name: "Dario Valen",
   role: "Mercader",
-  family: "commerce",
+  family: "merchants",
   tags: ["merchant", "caravan"],
   trust: 50,
   tension: 20,
@@ -191,12 +191,12 @@ Las familias viven en `data/families.js`. Vincula eventos con:
 
 ```js
 event("border_refugees", "Refugiados en la frontera", "...", options, {
-  family: "border",
-  families: ["border"]
+  family: "diplomat",
+  families: ["diplomat"]
 })
 ```
 
-Usa IDs de `data/families.js` para contenido nuevo salvo que estés modelando un tipo de issue específico ya existente.
+Usa IDs de `data/families.js` para contenido nuevo salvo que estés modelando un tipo de issue específico ya existente. El catálogo actual de familias es: `merchants`, `artisans`, `chancellor`, `clergy`, `army`, `nobility`, `people`, `spy`, `diplomat`, `steward`, `seneschal`, `apothecary`, `scholar` y `jester`. El motor conserva alias heredados para contenido o partidas antiguas, pero no deben usarse como IDs nuevos.
 
 ## Cómo crear un issue
 
@@ -208,7 +208,7 @@ issues: [{
   issue: {
     id: "border-crisis",
     actorId: "marca_oriental",
-    type: "border",
+    type: "diplomat",
     stage: 0,
     tension: 38,
     trust: 45,
@@ -238,7 +238,7 @@ Acciones disponibles:
 Para mostrar un evento solo si existe un issue compatible, añade una regla `issue` al evento:
 
 ```js
-{ kind: "consequence", family: "border", issue: { id: "border-crisis", minStage: 1 } }
+{ kind: "consequence", family: "diplomat", issue: { id: "border-crisis", minStage: 1 } }
 ```
 
 
@@ -349,12 +349,12 @@ Ejemplo:
 
 ```js
 event("empty_granaries", "Graneros vacíos", "...", options, {
-  family: "food",
+  family: "seneschal",
   resourceConditions: { food: { max: 30 } }
 })
 
 event("royal_auditors", "Auditores reales", "...", options, {
-  family: "crown",
+  family: "chancellor",
   resourceWeights: [{ resource: "crown", min: 70, multiplier: 2 }]
 })
 ```

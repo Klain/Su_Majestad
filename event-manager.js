@@ -1,11 +1,43 @@
 class EventManager {
   constructor(catalog, options = {}) {
-    this.catalog = catalog;
-    this.eventsById = new Map(catalog.map((item) => [item.id, item]));
     this.random = options.random || Math.random;
-    this.actorsById = new Map((options.actors || []).map((actor) => [actor.id, actor]));
+    this.familyAliases = this.createFamilyAliases(options.families || []);
+    this.actorsById = new Map((options.actors || []).map((actor) => [actor.id, this.normalizeActor(actor)]));
     this.familiesById = new Map((options.families || []).map((family) => [family.id, family]));
+    this.catalog = catalog.map((item) => this.normalizeCatalogItem(item));
+    this.eventsById = new Map(this.catalog.map((item) => [item.id, item]));
     this.recentRepeatDays = options.recentRepeatDays || 8;
+  }
+
+
+  createFamilyAliases(families = []) {
+    const aliases = new Map();
+    families.forEach((family) => {
+      aliases.set(family.id, family.id);
+      (family.legacyIds || []).forEach((legacyId) => aliases.set(legacyId, family.id));
+    });
+    return aliases;
+  }
+
+  normalizeFamily(family) {
+    return family ? (this.familyAliases.get(family) || family) : family;
+  }
+
+  normalizeFamilyList(items = []) {
+    return [...new Set((Array.isArray(items) ? items : []).map((family) => this.normalizeFamily(family)).filter(Boolean))];
+  }
+
+  normalizeActor(actor) {
+    return actor ? { ...actor, family: this.normalizeFamily(actor.family) } : actor;
+  }
+
+  normalizeCatalogItem(item) {
+    return {
+      ...item,
+      family: this.normalizeFamily(item.family),
+      families: this.normalizeFamilyList(item.families),
+      incompatibleFamilies: this.normalizeFamilyList(item.incompatibleFamilies)
+    };
   }
 
   createInitialMemory() {
@@ -55,7 +87,7 @@ class EventManager {
       daily: item.daily && typeof item.daily === "object" ? item.daily : {},
       every: item.every || null,
       cost: item.cost || null,
-      families: Array.isArray(item.families) ? item.families : [],
+      families: this.normalizeFamilyList(item.families),
       stacking: item.stacking || "refresh"
     };
   }
@@ -205,7 +237,7 @@ class EventManager {
       day: state.day,
       eventId: eventItem.id,
       eventTitle: eventItem.title,
-      family: eventItem.family || null,
+      family: this.normalizeFamily(eventItem.family) || null,
       choice: choice.label,
       tags: choice.addTags || [],
       resultText,
@@ -336,19 +368,20 @@ class EventManager {
   crisisWeightBonus(item, state) {
     const seasonal = (state.news || []).filter((news) => news.type === "seasonal" && news.families?.length && news.remainingDays > 0);
     if (!seasonal.length) return 0;
-    const eventFamilies = new Set([item.family, ...(item.families || [])].filter(Boolean));
-    return seasonal.reduce((sum, news) => sum + news.families.filter((family) => eventFamilies.has(family)).length * (news.weightBonus || 2.5), 0);
+    const eventFamilies = new Set([this.normalizeFamily(item.family), ...this.normalizeFamilyList(item.families)].filter(Boolean));
+    return seasonal.reduce((sum, news) => sum + this.normalizeFamilyList(news.families).filter((family) => eventFamilies.has(family)).length * (news.weightBonus || 2.5), 0);
   }
 
   issueWeightBonus(item, state) {
     if (!state.issues?.length) return 0;
-    const familyBonus = state.issues.filter((issue) => item.families?.includes(issue.type) || item.family === issue.type).length * 2;
+    const familyBonus = state.issues.filter((issue) => this.normalizeFamilyList(item.families).includes(this.normalizeFamily(issue.type)) || this.normalizeFamily(item.family) === this.normalizeFamily(issue.type)).length * 2;
     const directBonus = item.issue && this.hasMatchingIssue(item.issue, state) ? 5 : 0;
     return familyBonus + directBonus;
   }
 
   recentPenalty(item, state) {
-    const recent = [...(state.history || [])].reverse().find((entry) => entry.eventId === item.id || (item.family && entry.family === item.family));
+    const itemFamily = this.normalizeFamily(item.family);
+    const recent = [...(state.history || [])].reverse().find((entry) => entry.eventId === item.id || (itemFamily && this.normalizeFamily(entry.family) === itemFamily));
     if (!recent) return 1;
     const age = state.day - recent.day;
     if (age <= 2) return 0.2;

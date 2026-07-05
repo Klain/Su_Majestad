@@ -133,3 +133,10 @@ El valor inicial es 50 y las partidas antiguas migran con ese mismo valor si no 
 El selector de eventos puede leer los atributos actuales del reino antes de decidir qué asuntos llegan al consejo. `resourceConditions` cubre escenas que solo tienen sentido bajo una presión concreta, como escasez de comida, mientras `resourceWeights` permite que un tema sea más probable cuando un recurso está alto o bajo sin convertirlo en obligatorio.
 
 La decisión de diseño es mantener esta lógica dentro del `EventManager`: los eventos antiguos no necesitan cambios y los nuevos campos se combinan con pesos base, familias, issues, crisis y penalización por repetición.
+
+
+## v0.6.3 - Reformulación de familias
+
+Las familias pasan de temas narrativos amplios a roles de diseño orientados al balance del catálogo: mercaderes para intercambios, artesanos para convertir Oro en mejoras, canciller para leyes y Corona, clero para Fe, ejército para Amenaza, nobleza y pueblo como tensión social, espía para manipulación con Oro, diplomacia para exterior, mayordomo para palacio, senescal para logística, boticario para enfermedad, erudito para conocimiento y bufón para caos controlado.
+
+Para no reescribir todavía todo el catálogo, el contenido existente se remapea de forma conservadora y el motor acepta alias heredados. Las familias antiguas quedan como compatibilidad, no como taxonomía recomendada para contenido nuevo.

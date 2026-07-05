@@ -3,7 +3,7 @@ const actors = [
     id: "dario",
     name: "Dario Valen",
     role: "Mercader",
-    family: "commerce",
+    family: "merchants",
     tags: ["merchant", "caravan"],
     trust: 50,
     tension: 20,

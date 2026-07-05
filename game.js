@@ -1,4 +1,4 @@
-const GAME_VERSION = "v0.6.2";
+const GAME_VERSION = "v0.6.3";
 const DEBUG_UI = false;
 const STORAGE_KEY = "su-majestad-save-v2";
 const LEGACY_STORAGE_KEY = "su-majestad-save-v1";
@@ -74,16 +74,16 @@ const rulerTraits = [
   { id: "court_merchant", name: "Mercader de Corte", tier: 2, family: "gold", parentId: "administrator", description: "La corte huele a especias, tinta y contratos.", onAcquire: { gold: 45 }, passive: { nobility: -1 }, evolvesTo: ["merchant_king", "royal_monopolies"] },
   { id: "merchant_king", name: "Rey Mercader", tier: 3, family: "gold", parentId: "court_merchant", description: "El trono habla el idioma del beneficio.", onAcquire: { gold: 90 }, passive: { people: -1 }, evolvesTo: [] },
   { id: "royal_monopolies", name: "Monopolios Reales", tier: 3, family: "gold", parentId: "court_merchant", description: "Todo gran negocio termina pagando a la corona.", onAcquire: {}, passive: { gold: 4, people: -2 }, evolvesTo: [] },
-  { id: "royal_granary", name: "Granero Real", tier: 1, family: "food", description: "El pan del mañana duerme bajo sello real.", onAcquire: { food: 30 }, passive: {}, evolvesTo: ["granary_steward", "foresighted", "rationer"] },
-  { id: "granary_steward", name: "Mayordomo de Graneros", tier: 2, family: "food", parentId: "royal_granary", description: "Cada saco tiene destino antes de ser cosechado.", onAcquire: { food: 30 }, passive: {}, evolvesTo: ["silo_lord", "warehouse_network"] },
-  { id: "silo_lord", name: "Señor de los Silos", tier: 3, family: "food", parentId: "granary_steward", description: "El hambre teme a tus almacenes.", onAcquire: { food: 45 }, passive: {}, evolvesTo: [] },
-  { id: "warehouse_network", name: "Red de Almacenes", tier: 3, family: "food", parentId: "granary_steward", description: "Carros y llaves unen las despensas del reino.", onAcquire: {}, passive: { food: 3, gold: -1 }, evolvesTo: [] },
-  { id: "foresighted", name: "Previsor", tier: 2, family: "food", parentId: "royal_granary", description: "La escasez se combate antes de tener nombre.", onAcquire: {}, passive: { food: 2 }, evolvesTo: ["general_intendant", "abundance_realm"] },
-  { id: "general_intendant", name: "Intendente General", tier: 3, family: "food", parentId: "foresighted", description: "La logística se convierte en ley silenciosa.", onAcquire: {}, passive: { food: 3, gold: -1 }, evolvesTo: [] },
-  { id: "abundance_realm", name: "Reino de la Abundancia", tier: 3, family: "food", parentId: "foresighted", description: "Las mesas llenas compran calma.", onAcquire: { food: 90 }, passive: { gold: -1 }, evolvesTo: [] },
-  { id: "rationer", name: "Racionador", tier: 2, family: "food", parentId: "royal_granary", description: "La justicia del pan se mide con cuchillo fino.", onAcquire: { food: 45 }, passive: { people: -1 }, evolvesTo: ["winter_hand", "controlled_bread"] },
-  { id: "winter_hand", name: "Mano de Invierno", tier: 3, family: "food", parentId: "rationer", description: "La corona guarda reservas aunque el pueblo murmure.", onAcquire: { food: 75 }, passive: { people: -1 }, evolvesTo: [] },
-  { id: "controlled_bread", name: "Pan Controlado", tier: 3, family: "food", parentId: "rationer", description: "Cada hogaza nace bajo norma real.", onAcquire: {}, passive: { food: 4, people: -2 }, evolvesTo: [] },
+  { id: "royal_granary", name: "Granero Real", tier: 1, family: "seneschal", description: "El pan del mañana duerme bajo sello real.", onAcquire: { food: 30 }, passive: {}, evolvesTo: ["granary_steward", "foresighted", "rationer"] },
+  { id: "granary_steward", name: "Mayordomo de Graneros", tier: 2, family: "seneschal", parentId: "royal_granary", description: "Cada saco tiene destino antes de ser cosechado.", onAcquire: { food: 30 }, passive: {}, evolvesTo: ["silo_lord", "warehouse_network"] },
+  { id: "silo_lord", name: "Señor de los Silos", tier: 3, family: "seneschal", parentId: "granary_steward", description: "El hambre teme a tus almacenes.", onAcquire: { food: 45 }, passive: {}, evolvesTo: [] },
+  { id: "warehouse_network", name: "Red de Almacenes", tier: 3, family: "seneschal", parentId: "granary_steward", description: "Carros y llaves unen las despensas del reino.", onAcquire: {}, passive: { food: 3, gold: -1 }, evolvesTo: [] },
+  { id: "foresighted", name: "Previsor", tier: 2, family: "seneschal", parentId: "royal_granary", description: "La escasez se combate antes de tener nombre.", onAcquire: {}, passive: { food: 2 }, evolvesTo: ["general_intendant", "abundance_realm"] },
+  { id: "general_intendant", name: "Intendente General", tier: 3, family: "seneschal", parentId: "foresighted", description: "La logística se convierte en ley silenciosa.", onAcquire: {}, passive: { food: 3, gold: -1 }, evolvesTo: [] },
+  { id: "abundance_realm", name: "Reino de la Abundancia", tier: 3, family: "seneschal", parentId: "foresighted", description: "Las mesas llenas compran calma.", onAcquire: { food: 90 }, passive: { gold: -1 }, evolvesTo: [] },
+  { id: "rationer", name: "Racionador", tier: 2, family: "seneschal", parentId: "royal_granary", description: "La justicia del pan se mide con cuchillo fino.", onAcquire: { food: 45 }, passive: { people: -1 }, evolvesTo: ["winter_hand", "controlled_bread"] },
+  { id: "winter_hand", name: "Mano de Invierno", tier: 3, family: "seneschal", parentId: "rationer", description: "La corona guarda reservas aunque el pueblo murmure.", onAcquire: { food: 75 }, passive: { people: -1 }, evolvesTo: [] },
+  { id: "controlled_bread", name: "Pan Controlado", tier: 3, family: "seneschal", parentId: "rationer", description: "Cada hogaza nace bajo norma real.", onAcquire: {}, passive: { food: 4, people: -2 }, evolvesTo: [] },
   { id: "veteran", name: "Veterano", tier: 1, family: "army", description: "Tu mano recuerda el peso de la espada.", onAcquire: { army: 30 }, passive: {}, evolvesTo: ["royal_captain", "recruiter", "palace_guard"] },
   { id: "royal_captain", name: "Capitán Real", tier: 2, family: "army", parentId: "veteran", description: "Los estandartes responden rápido a tu voz.", onAcquire: { army: 30 }, passive: {}, evolvesTo: ["crown_marshal", "military_academy"] },
   { id: "crown_marshal", name: "Mariscal de la Corona", tier: 3, family: "army", parentId: "royal_captain", description: "El ejército marcha al ritmo del trono.", onAcquire: { army: 45 }, passive: {}, evolvesTo: [] },
@@ -150,12 +150,12 @@ const tierOneTraits = rulerTraits.filter((trait) => trait.tier === 1);
 validateTraitTree();
 
 const seasonalNews = [
-  { id: "drought", name: "Sequía", description: "La comida se agota más rápido.", duration: 4, families: ["food", "shortage", "people"], daily: { food: -2 } },
-  { id: "war_rumors", name: "Rumores de guerra", description: "La frontera pesa más en el consejo.", duration: 4, families: ["border", "army", "diplomacy"], daily: { threat: 2 } },
-  { id: "royal_fair", name: "Feria real", description: "El comercio domina la corte.", duration: 4, families: ["commerce", "people"], daily: { gold: 2 } },
-  { id: "banditry", name: "Bandolerismo", description: "El crimen gana presencia.", duration: 4, families: ["crime", "public_order"], daily: { threat: 1, gold: -1 } },
-  { id: "schism", name: "Cisma religioso", description: "La iglesia exige respuestas.", duration: 4, families: ["church", "nobility"], daily: { faith: -1 } },
-  { id: "court_intrigue", name: "Intriga cortesana", description: "Las casas nobles mueven sus piezas.", duration: 4, families: ["nobility", "royal_family"], daily: { nobility: -1 } }
+  { id: "drought", name: "Sequía", description: "La comida se agota más rápido.", duration: 4, families: ["seneschal", "shortage", "people"], daily: { food: -2 } },
+  { id: "war_rumors", name: "Rumores de guerra", description: "La frontera pesa más en el consejo.", duration: 4, families: ["diplomat", "army"], daily: { threat: 2 } },
+  { id: "royal_fair", name: "Feria real", description: "El comercio domina la corte.", duration: 4, families: ["merchants", "people"], daily: { gold: 2 } },
+  { id: "banditry", name: "Bandolerismo", description: "El crimen gana presencia.", duration: 4, families: ["spy", "public_order"], daily: { threat: 1, gold: -1 } },
+  { id: "schism", name: "Cisma religioso", description: "La iglesia exige respuestas.", duration: 4, families: ["clergy", "nobility"], daily: { faith: -1 } },
+  { id: "court_intrigue", name: "Intriga cortesana", description: "Las casas nobles mueven sus piezas.", duration: 4, families: ["nobility", "steward"], daily: { nobility: -1 } }
 ].map((item) => ({ title: item.name, text: item.description, type: "seasonal", source: "seasonal", stacking: "replace", ...item }));
 const crises = seasonalNews;
 
@@ -264,7 +264,7 @@ function endDay() {
 }
 
 function checkOutcome() {
-  const vital = ["gold", "food", "army", "people", "nobility", "faith", "crown"];
+  const vital = ["gold", "seneschal", "army", "people", "nobility", "faith", "chancellor"];
   if (vital.some((key) => state.resources[key] <= 0) || state.resources.threat >= 100) {
     state.gameOver = true;
     state.outcome = "lose";
@@ -732,7 +732,7 @@ function isAmbitionComplete() {
   const histories = state.history || [];
   const tags = state.tags || [];
   const familyCount = (family) => histories.filter((entry) => entry.family === family).length;
-  if (state.ambition.id === "merchant") return r.gold >= 70 && familyCount("commerce") >= 3;
+  if (state.ambition.id === "merchant") return r.gold >= 70 && familyCount("merchants") >= 3;
   if (state.ambition.id === "pious") return r.faith >= 70 && !tags.some((tag) => /church|monastery|tithe/.test(tag) && /mocked|rejected|stolen|burned|insult/.test(tag));
   if (state.ambition.id === "people") return r.people >= 70 && tags.filter((tag) => /cruel|abandoned|executed|ignored/.test(tag)).length <= 1;
   if (state.ambition.id === "iron") return r.army >= 70 && r.threat <= 30;
@@ -952,7 +952,7 @@ function resourceTone(key, value) {
 }
 
 function resourceArticle(key) {
-  return ["food", "nobility", "faith", "crown", "threat"].includes(key) ? "la" : "el";
+  return ["seneschal", "nobility", "faith", "chancellor", "threat"].includes(key) ? "la" : "el";
 }
 
 function impactAdverb(level) {

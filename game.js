@@ -1,4 +1,4 @@
-const GAME_VERSION = "v0.6.0";
+const GAME_VERSION = "v0.6.1";
 const DEBUG_UI = false;
 const STORAGE_KEY = "su-majestad-save-v2";
 const LEGACY_STORAGE_KEY = "su-majestad-save-v1";
@@ -14,6 +14,7 @@ const tooltipTexts = {
     people: "Mide apoyo popular y bienestar común. Si el pueblo cae a 0, la paciencia del reino se rompe y estalla la revuelta.",
     nobility: "Mide apoyo de casas nobles, linajes y corte. Si la nobleza cae a 0, los grandes señores se vuelven contra el trono.",
     faith: "Mide legitimidad religiosa y apoyo de la Iglesia. Si la fe cae a 0, el trono pierde su amparo espiritual.",
+    crown: "Representa la confianza del reino en el monarca. Si la Corona cae a 0, el reinado pierde su legitimidad y termina.",
     threat: "Mide peligro acumulado, crimen, guerra e inestabilidad. Si llega a 100, el reino queda consumido por la crisis."
   },
   reign: {
@@ -46,6 +47,7 @@ const resourceMeta = {
   people: ["Pueblo", "🧑‍🌾"],
   nobility: ["Nobleza", "👑"],
   faith: ["Fe", "⛪"],
+  crown: ["Corona", "♛"],
   threat: ["Amenaza", "🔥"]
 };
 
@@ -176,7 +178,7 @@ const crisisPressureRules = {
   feud: [{ minStage: 1, minTension: 60, pressure: { title: "Rencillas armadas", daily: { threat: 1, nobility: -1 } } }]
 };
 
-const startingResources = { gold: 55, food: 55, army: 45, people: 55, nobility: 50, faith: 50, threat: 20 };
+const startingResources = { gold: 55, food: 55, army: 45, people: 55, nobility: 50, faith: 50, crown: 50, threat: 20 };
 const eventManager = new EventManager(events, { actors, families });
 let state;
 let currentScreen = "menu";
@@ -262,7 +264,7 @@ function endDay() {
 }
 
 function checkOutcome() {
-  const vital = ["gold", "food", "army", "people", "nobility", "faith"];
+  const vital = ["gold", "food", "army", "people", "nobility", "faith", "crown"];
   if (vital.some((key) => state.resources[key] <= 0) || state.resources.threat >= 100) {
     state.gameOver = true;
     state.outcome = "lose";
@@ -310,6 +312,7 @@ function render() {
 }
 
 function normalizeRoguelikeState(saved) {
+  saved.resources = { ...startingResources, ...(saved.resources || {}) };
   saved.ambition = ambitions.find((item) => item.id === saved.ambition?.id) || saved.ambition || pickRandom(ambitions);
   migrateTraitState(saved);
   saved.news = Array.isArray(saved.news) ? saved.news : [];
@@ -720,7 +723,7 @@ function buildEpilogue() {
   else if (r.gold <= 15) title = "El Rey Endeudado";
   else if (r.threat <= 25 && (state.completedObjectives?.issuesResolved || 0) >= 2) title = "El Justo";
   else if (r.army >= 70 && r.people < 40) title = "El Tirano Necesario";
-  const text = `${ambitionWon ? "La ambición de " + state.ambition.name + " se cumplió" : "La ambición de " + state.ambition.name + " quedó incompleta"}. Recursos finales: oro ${r.gold}, comida ${r.food}, ejército ${r.army}, pueblo ${r.people}, nobleza ${r.nobility}, fe ${r.faith}, amenaza ${r.threat}. Crisis resueltas: ${state.completedObjectives?.issuesResolved || 0}; activos: ${(state.issues || []).length}.`;
+  const text = `${ambitionWon ? "La ambición de " + state.ambition.name + " se cumplió" : "La ambición de " + state.ambition.name + " quedó incompleta"}. Recursos finales: oro ${r.gold}, comida ${r.food}, ejército ${r.army}, pueblo ${r.people}, nobleza ${r.nobility}, fe ${r.faith}, corona ${r.crown}, amenaza ${r.threat}. Crisis resueltas: ${state.completedObjectives?.issuesResolved || 0}; activos: ${(state.issues || []).length}.`;
   return { title, text, ambitionWon };
 }
 
@@ -949,7 +952,7 @@ function resourceTone(key, value) {
 }
 
 function resourceArticle(key) {
-  return ["food", "nobility", "faith", "threat"].includes(key) ? "la" : "el";
+  return ["food", "nobility", "faith", "crown", "threat"].includes(key) ? "la" : "el";
 }
 
 function impactAdverb(level) {
@@ -1124,7 +1127,7 @@ function startSelectedRun() {
 function deleteSave() { if (!hasValidSave() || !confirm("¿Borrar la partida guardada?")) return; localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(LEGACY_STORAGE_KEY); state = null; setScreen("menu"); }
 function continueRun() { if (!state) loadSavedState(); if (state) setScreen(state.gameOver ? "ending" : "game"); }
 function loadSavedState() { const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY); if (!saved) return; state = normalizeRoguelikeState(eventManager.normalizeState(JSON.parse(saved))); state.todaysEvents = Array.isArray(state.todaysEvents) && state.todaysEvents.length ? state.todaysEvents : drawEventsForToday(); }
-function getDeathCause() { const r = state.resources; if (r.gold <= 0) return "Bancarrota"; if (r.food <= 0) return "Hambruna"; if (r.army <= 0) return "Ejército roto"; if (r.people <= 0) return "Revuelta popular"; if (r.nobility <= 0) return "Nobleza sublevada"; if (r.faith <= 0) return "Fe colapsada"; if (r.threat >= 100) return "Reino consumido por amenaza"; return "Desenlace incierto"; }
+function getDeathCause() { const r = state.resources; if (r.gold <= 0) return "Bancarrota"; if (r.food <= 0) return "Hambruna"; if (r.army <= 0) return "Ejército roto"; if (r.people <= 0) return "Revuelta popular"; if (r.nobility <= 0) return "Nobleza sublevada"; if (r.faith <= 0) return "Fe colapsada"; if (r.crown <= 0) return "Corona desacreditada"; if (r.threat >= 100) return "Reino consumido por amenaza"; return "Desenlace incierto"; }
 function renderEnding() {
   const card = document.getElementById("endingCard");
   if (!state) { card.innerHTML = ""; return; }

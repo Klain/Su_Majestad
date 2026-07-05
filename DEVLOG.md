@@ -121,3 +121,9 @@ Este cambio refuerza la identidad roguelike de cada partida sin tocar el `EventM
 - La tarjeta de Reinado se centra en rasgo, ambición y cadena de rasgos; edictos y temporadas aparecen ahora en Noticias del Reino.
 - Los chips narrativos distinguen 🧠 Memoria, 📰 Noticia, ⚖️ Crisis, ⏳ Consecuencia y 🎲 Azar.
 
+
+## v0.6.1 - Corona como confianza monárquica
+
+Esta versión añade **Corona** como atributo separado para representar la confianza global del reino en el monarca. A diferencia de Pueblo, Nobleza o Fe, no introduce aún eventos ni mecánicas nuevas: sirve como barra de legitimidad general preparada para futuros sistemas.
+
+El valor inicial es 50 y las partidas antiguas migran con ese mismo valor si no lo tenían guardado. Como el resto de recursos vitales, caer a 0 provoca derrota; la amenaza conserva su regla inversa de derrota al llegar a 100.

@@ -2,6 +2,17 @@
 
 Todas las versiones del proyecto deben usar formato semver y actualizar este archivo cuando haya cambios importantes.
 
+## v0.6.1 - 2026-07-05
+
+### Cambios realizados
+- Se añade `crown` / Corona como atributo del reino con valor inicial 50.
+- Corona se integra en la UI de recursos, tooltips, chips de efectos, resumen final y migración de partidas guardadas antiguas.
+- Llegar a 0 Corona provoca derrota por pérdida de legitimidad del monarca.
+- Se actualiza la versión a `v0.6.1`.
+
+### Correcciones
+- Las partidas guardadas sin Corona reciben el valor inicial durante la normalización del estado.
+
 ## v0.6.0 - 2026-07-04
 
 ### Cambios realizados

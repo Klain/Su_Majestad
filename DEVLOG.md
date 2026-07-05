@@ -140,3 +140,10 @@ La decisión de diseño es mantener esta lógica dentro del `EventManager`: los 
 Las familias pasan de temas narrativos amplios a roles de diseño orientados al balance del catálogo: mercaderes para intercambios, artesanos para convertir Oro en mejoras, canciller para leyes y Corona, clero para Fe, ejército para Amenaza, nobleza y pueblo como tensión social, espía para manipulación con Oro, diplomacia para exterior, mayordomo para palacio, senescal para logística, boticario para enfermedad, erudito para conocimiento y bufón para caos controlado.
 
 Para no reescribir todavía todo el catálogo, el contenido existente se remapea de forma conservadora y el motor acepta alias heredados. Las familias antiguas quedan como compatibilidad, no como taxonomía recomendada para contenido nuevo.
+
+
+## v0.6.4 - Religión inicial del reino
+
+La creación del reinado suma un tercer eje de identidad: la religión del reino. A diferencia del rasgo, que describe al monarca, y de la ambición, que marca un objetivo de crónica, la religión define cómo se articula la Fe como institución social y política desde el primer día.
+
+La implementación se mantiene deliberadamente pequeña: tres prototipos con bonos iniciales y referencias de diseño para evolución o ruptura futuras. No se añaden crisis religiosas ni packs de eventos, porque el objetivo de esta tarea es preparar el estado, la UI y la compatibilidad de guardado antes de construir contenido sistémico encima.

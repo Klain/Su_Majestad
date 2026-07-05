@@ -1,4 +1,4 @@
-const GAME_VERSION = "v0.6.3";
+const GAME_VERSION = "v0.6.4";
 const DEBUG_UI = false;
 const STORAGE_KEY = "su-majestad-save-v2";
 const LEGACY_STORAGE_KEY = "su-majestad-save-v1";
@@ -20,6 +20,7 @@ const tooltipTexts = {
   reign: {
     trait: "Rasgo inicial del monarca. Modifica el arranque de la partida y da identidad a este reinado.",
     ambition: "Objetivo secundario del reinado. Cumplirlo mejora el epílogo final.",
+    religion: "Religión inicial del reino. Define cómo se articula la Fe y aplica un bono al comenzar.",
     crisis: "Conflicto persistente con actor, tensión y confianza.",
     edict: "Edicto convertido en noticia temporal del reino."
   },
@@ -51,6 +52,32 @@ const resourceMeta = {
   threat: ["Amenaza", "🔥"]
 };
 
+
+
+const kingdomReligions = [
+  {
+    id: "altar_rite",
+    name: "Rito del Altar Alto",
+    description: "La Fe se ordena alrededor de templos, liturgia solemne y obediencia clerical.",
+    bonus: { faith: 18, nobility: 4 },
+    futureHooks: { evolution: ["sacred_realm", "monastery_patronage"], rupture: ["clerical_schism", "heresy_trials"] }
+  },
+  {
+    id: "hearth_cult",
+    name: "Culto del Hogar",
+    description: "La devoción vive en plazas, familias y fiestas comunales antes que en palacios.",
+    bonus: { people: 16, faith: 6 },
+    futureHooks: { evolution: ["popular_saints", "village_confraternities"], rupture: ["folk_heresy", "pilgrim_riots"] }
+  },
+  {
+    id: "crown_mandate",
+    name: "Mandato de la Corona",
+    description: "La religión proclama que gobernar bien es custodiar un orden sagrado desde el trono.",
+    bonus: { crown: 16, faith: 4 },
+    futureHooks: { evolution: ["anointed_dynasty", "royal_synod"], rupture: ["legitimacy_dispute", "anti_crown_preachers"] }
+  }
+];
+const kingdomReligionsById = Object.fromEntries(kingdomReligions.map((religion) => [religion.id, religion]));
 
 const ambitions = [
   { id: "merchant", name: "Rey mercader", description: "Acaba con oro alto y comercio favorecido." },
@@ -182,13 +209,15 @@ const startingResources = { gold: 55, food: 55, army: 45, people: 55, nobility: 
 const eventManager = new EventManager(events, { actors, families });
 let state;
 let currentScreen = "menu";
-let setupOptions = { traits: [], ambitions: [], selectedTrait: null, selectedAmbition: null };
+let setupOptions = { traits: [], ambitions: [], religions: [], selectedTrait: null, selectedAmbition: null, selectedReligion: null };
 
 function newGame(selection = {}) {
   const trait = selection.trait || pickRandom(tierOneTraits);
   const ambition = selection.ambition || pickRandom(ambitions);
+  const religion = selection.religion || pickRandom(kingdomReligions);
   const resources = { ...startingResources };
   applyResourceDelta(resources, trait.onAcquire);
+  applyResourceDelta(resources, religion.bonus);
   state = eventManager.normalizeState({
     day: 1,
     resources,
@@ -198,6 +227,7 @@ function newGame(selection = {}) {
     outcome: null,
     lastResult: null,
     ambition,
+    religion,
     rulerTrait: trait,
     traitPath: [trait.id],
     acquiredTraits: [trait.id],
@@ -264,7 +294,7 @@ function endDay() {
 }
 
 function checkOutcome() {
-  const vital = ["gold", "seneschal", "army", "people", "nobility", "faith", "chancellor"];
+  const vital = ["gold", "food", "army", "people", "nobility", "faith", "crown"];
   if (vital.some((key) => state.resources[key] <= 0) || state.resources.threat >= 100) {
     state.gameOver = true;
     state.outcome = "lose";
@@ -314,6 +344,7 @@ function render() {
 function normalizeRoguelikeState(saved) {
   saved.resources = { ...startingResources, ...(saved.resources || {}) };
   saved.ambition = ambitions.find((item) => item.id === saved.ambition?.id) || saved.ambition || pickRandom(ambitions);
+  saved.religion = normalizeReligionState(saved.religion);
   migrateTraitState(saved);
   saved.news = Array.isArray(saved.news) ? saved.news : [];
   saved.activeCrisis = saved.activeCrisis?.id ? { ...seasonalNews.find((item) => item.id === saved.activeCrisis.id), ...saved.activeCrisis } : null;
@@ -325,6 +356,13 @@ function normalizeRoguelikeState(saved) {
   saved.edictChoices = Array.isArray(saved.edictChoices) ? saved.edictChoices : [];
   saved.completedObjectives = { issuesResolved: 0, ...(saved.completedObjectives || {}) };
   return saved;
+}
+
+function normalizeReligionState(religion) {
+  if (!religion) return null;
+  const id = religion.id || religion;
+  const base = kingdomReligionsById[id];
+  return base ? { ...base, ...(typeof religion === "object" ? religion : {}) } : null;
 }
 
 function migrateTraitState(saved) {
@@ -387,7 +425,8 @@ function renderReign() {
   const panel = document.getElementById("reign");
   if (!panel) return;
   const chain = formatTraitChain();
-  panel.innerHTML = `<div class="reign-grid"><span><strong>${tooltip("Rasgo", tooltipTexts.reign.trait)}</strong>${tooltip(chain, formatTraitPathTooltip())}</span><span><strong>${tooltip("Ambición", tooltipTexts.reign.ambition)}</strong>${tooltip(state.ambition.name, state.ambition.description)}</span></div>`;
+  const religion = state.religion ? `<span><strong>${tooltip("Religión", tooltipTexts.reign.religion)}</strong>${tooltip(state.religion.name, formatReligionTooltip(state.religion))}</span>` : `<span><strong>${tooltip("Religión", tooltipTexts.reign.religion)}</strong>${tooltip("Sin credo inicial", "Partida antigua: este reinado se creó antes de elegir religión inicial.")}</span>`;
+  panel.innerHTML = `<div class="reign-grid"><span><strong>${tooltip("Rasgo", tooltipTexts.reign.trait)}</strong>${tooltip(chain, formatTraitPathTooltip())}</span><span><strong>${tooltip("Ambición", tooltipTexts.reign.ambition)}</strong>${tooltip(state.ambition.name, state.ambition.description)}</span>${religion}</div>`;
 }
 
 function renderTraitEvolution() {
@@ -1105,24 +1144,32 @@ function renderMenu() {
   document.getElementById("deleteSaveButton").classList.toggle("hidden", !hasSave);
 }
 function openSetup() {
-  setupOptions = { traits: pickMany(tierOneTraits, 3), ambitions: pickMany(ambitions, 3), selectedTrait: null, selectedAmbition: null };
+  setupOptions = { traits: pickMany(tierOneTraits, 3), ambitions: pickMany(ambitions, 3), religions: kingdomReligions, selectedTrait: null, selectedAmbition: null, selectedReligion: null };
   setScreen("setup");
 }
 function renderSetup() {
   const traitBox = document.getElementById("traitChoices");
   const ambitionBox = document.getElementById("ambitionChoices");
-  if (!traitBox || !ambitionBox) return;
+  const religionBox = document.getElementById("religionChoices");
+  if (!traitBox || !ambitionBox || !religionBox) return;
   traitBox.innerHTML = setupOptions.traits.map((trait) => `<button class="choice-card ${setupOptions.selectedTrait?.id === trait.id ? "selected" : ""}" type="button" data-trait="${trait.id}"><span class="trait-tier">${trait.tierName}</span><strong>${trait.name}</strong><span>${trait.description}</span><span>${tooltip("Al adquirir", formatEffectsText(trait.onAcquire) || "Sin efecto inmediato")}</span></button>`).join("");
   ambitionBox.innerHTML = setupOptions.ambitions.map((ambition) => `<button class="choice-card ${setupOptions.selectedAmbition?.id === ambition.id ? "selected" : ""}" type="button" data-ambition="${ambition.id}"><strong>${ambition.name}</strong><span>${ambition.description}</span></button>`).join("");
-  document.getElementById("startRunButton").disabled = !setupOptions.selectedTrait || !setupOptions.selectedAmbition;
+  religionBox.innerHTML = setupOptions.religions.map((religion) => `<button class="choice-card ${setupOptions.selectedReligion?.id === religion.id ? "selected" : ""}" type="button" data-religion="${religion.id}"><strong>${religion.name}</strong><span>${religion.description}</span><span>${tooltip("Bono inicial", formatEffectsText(religion.bonus) || "Sin efecto inmediato")}</span></button>`).join("");
+  document.getElementById("startRunButton").disabled = !setupOptions.selectedTrait || !setupOptions.selectedAmbition || !setupOptions.selectedReligion;
   traitBox.querySelectorAll("[data-trait]").forEach((button) => button.addEventListener("click", () => { setupOptions.selectedTrait = tierOneTraits.find((item) => item.id === button.dataset.trait); renderSetup(); }));
   ambitionBox.querySelectorAll("[data-ambition]").forEach((button) => button.addEventListener("click", () => { setupOptions.selectedAmbition = ambitions.find((item) => item.id === button.dataset.ambition); renderSetup(); }));
+  religionBox.querySelectorAll("[data-religion]").forEach((button) => button.addEventListener("click", () => { setupOptions.selectedReligion = kingdomReligionsById[button.dataset.religion]; renderSetup(); }));
 }
+function formatReligionTooltip(religion) {
+  const bonus = formatEffectsText(religion.bonus) || "Sin bono inicial";
+  return `${religion.description} Bono inicial: ${bonus}. Reservas futuras: evolución (${(religion.futureHooks?.evolution || []).join(", ") || "sin definir"}) y ruptura (${(religion.futureHooks?.rupture || []).join(", ") || "sin definir"}).`;
+}
+
 function formatEffectsText(effects = {}) { return Object.entries(effects).map(([key, value]) => `${resourceMeta[key]?.[0] || key} ${value > 0 ? "+" : ""}${value}`).join(" · "); }
 function startSelectedRun() {
-  if (!setupOptions.selectedTrait || !setupOptions.selectedAmbition) return;
+  if (!setupOptions.selectedTrait || !setupOptions.selectedAmbition || !setupOptions.selectedReligion) return;
   if (hasValidSave() && !confirm("Comenzar un nuevo reinado sobrescribirá la partida guardada anterior. ¿Continuar?")) return;
-  newGame({ trait: setupOptions.selectedTrait, ambition: setupOptions.selectedAmbition });
+  newGame({ trait: setupOptions.selectedTrait, ambition: setupOptions.selectedAmbition, religion: setupOptions.selectedReligion });
 }
 function deleteSave() { if (!hasValidSave() || !confirm("¿Borrar la partida guardada?")) return; localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(LEGACY_STORAGE_KEY); state = null; setScreen("menu"); }
 function continueRun() { if (!state) loadSavedState(); if (state) setScreen(state.gameOver ? "ending" : "game"); }
@@ -1136,7 +1183,7 @@ function renderEnding() {
   const history = (state.history || []).slice(-3).reverse();
   const pending = state.pendingEvents || [];
   card.className = `ending-card ${won ? "win" : "lose"}`;
-  card.innerHTML = `<p class="eyebrow">${won ? "Victoria" : "Derrota"}</p><h2>${epilogue.title}</h2><p>${won ? "La corte recordará este gobierno como una historia cerrada." : `Tu reinado cayó en el día ${state.day}. La corte recordará este gobierno como una advertencia.`}</p><p>${epilogue.text}</p><div class="run-summary"><strong>Ambición:</strong> ${state.ambition.name} — ${epilogue.ambitionWon ? "cumplida" : "La ambición quedó incompleta."}<br><strong>Rasgos:</strong> ${formatTraitChain()}<br><strong>Día alcanzado:</strong> ${Math.min(state.day, MAX_DAYS)}</div>${won ? "" : `<p class="death-cause">Causa de derrota: ${getDeathCause()}</p>`}<div class="run-summary"><strong>Recursos finales:</strong> ${Object.entries(resourceMeta).map(([key,[name]]) => `${name} ${state.resources[key]}`).join(" · ")}<br><strong>Crisis resueltas:</strong> ${state.completedObjectives?.issuesResolved || 0}<br><strong>Crisis abiertas restantes:</strong> ${(state.issues || []).length}</div><h3>Últimas decisiones importantes</h3><ul class="chronicle-list">${history.length ? history.map((item) => `<li>Día ${item.day}: ${item.choice} (${item.eventTitle})</li>`).join("") : "<li>La crónica quedó casi en blanco.</li>"}</ul>${pending.length ? `<p>Aún quedaban consecuencias pendientes.</p><ul class="chronicle-list">${pending.map((item) => `<li>Día ${item.dueDay || "?"}: ${item.eventId || item.id || "consecuencia"}</li>`).join("")}</ul>` : ""}<details><summary>Ver crónica</summary><ul class="chronicle-list">${(state.history || []).map((item) => `<li>Día ${item.day}: ${item.choice} (${item.eventTitle})${item.resultText ? ` — ${item.resultText}` : ""}</li>`).join("") || "<li>Sin decisiones registradas.</li>"}</ul></details><div class="setup-actions"><button id="endingNewRunButton" class="primary-button" type="button">Nuevo reinado</button><button id="endingMenuButton" class="secondary-button" type="button">Volver al menú</button><button id="copySummaryButton" class="secondary-button" type="button">Copiar resumen</button></div>`;
+  card.innerHTML = `<p class="eyebrow">${won ? "Victoria" : "Derrota"}</p><h2>${epilogue.title}</h2><p>${won ? "La corte recordará este gobierno como una historia cerrada." : `Tu reinado cayó en el día ${state.day}. La corte recordará este gobierno como una advertencia.`}</p><p>${epilogue.text}</p><div class="run-summary"><strong>Religión:</strong> ${state.religion?.name || "Sin credo inicial"}<br><strong>Ambición:</strong> ${state.ambition.name} — ${epilogue.ambitionWon ? "cumplida" : "La ambición quedó incompleta."}<br><strong>Rasgos:</strong> ${formatTraitChain()}<br><strong>Día alcanzado:</strong> ${Math.min(state.day, MAX_DAYS)}</div>${won ? "" : `<p class="death-cause">Causa de derrota: ${getDeathCause()}</p>`}<div class="run-summary"><strong>Recursos finales:</strong> ${Object.entries(resourceMeta).map(([key,[name]]) => `${name} ${state.resources[key]}`).join(" · ")}<br><strong>Crisis resueltas:</strong> ${state.completedObjectives?.issuesResolved || 0}<br><strong>Crisis abiertas restantes:</strong> ${(state.issues || []).length}</div><h3>Últimas decisiones importantes</h3><ul class="chronicle-list">${history.length ? history.map((item) => `<li>Día ${item.day}: ${item.choice} (${item.eventTitle})</li>`).join("") : "<li>La crónica quedó casi en blanco.</li>"}</ul>${pending.length ? `<p>Aún quedaban consecuencias pendientes.</p><ul class="chronicle-list">${pending.map((item) => `<li>Día ${item.dueDay || "?"}: ${item.eventId || item.id || "consecuencia"}</li>`).join("")}</ul>` : ""}<details><summary>Ver crónica</summary><ul class="chronicle-list">${(state.history || []).map((item) => `<li>Día ${item.day}: ${item.choice} (${item.eventTitle})${item.resultText ? ` — ${item.resultText}` : ""}</li>`).join("") || "<li>Sin decisiones registradas.</li>"}</ul></details><div class="setup-actions"><button id="endingNewRunButton" class="primary-button" type="button">Nuevo reinado</button><button id="endingMenuButton" class="secondary-button" type="button">Volver al menú</button><button id="copySummaryButton" class="secondary-button" type="button">Copiar resumen</button></div>`;
   document.getElementById("endingNewRunButton").addEventListener("click", openSetup);
   document.getElementById("endingMenuButton").addEventListener("click", () => setScreen("menu"));
   document.getElementById("copySummaryButton").addEventListener("click", copyChronicle);

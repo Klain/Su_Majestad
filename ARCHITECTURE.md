@@ -4,7 +4,7 @@
 
 - `index.html`: estructura de la aplicación, contenedores `menuScreen`, `setupScreen`, `gameScreen` y `endingScreen`, puntos de montaje de la interfaz y carga de scripts estáticos para GitHub Pages.
 - `style.css`: estilos visuales, responsive móvil/escritorio y componentes de cartas, recursos, mensajes, memoria e issues.
-- `game.js`: estado principal, `currentScreen`, setup de nueva run, bucle de partida, renderizado, tooltips reutilizables, guardado, carga, pantalla final y constante `GAME_VERSION`.
+- `game.js`: estado principal, `currentScreen`, setup de nueva run, bucle de partida, renderizado, tooltips reutilizables, guardado, carga, migración ligera de recursos faltantes, pantalla final y constante `GAME_VERSION`.
 - `event-manager.js`: motor de eventos, memoria, consecuencias, actores, issues, selección ponderada e interpolación de texto.
 - `events.js`: helpers globales `event`, `normalizeOption`, el catálogo agregado `events` y `registerEvents`.
 - `data/actors.js`: actores persistentes reutilizables por eventos y cadenas.
@@ -33,7 +33,7 @@ Los tooltips no cambian mecánicas ni estado persistente: solo añaden ayuda con
 
 1. Al cargar la página, `game.js` muestra el menú principal y comprueba si existe guardado válido en `localStorage`.
 2. Si no hay partida válida, no crea una run automáticamente; el jugador debe abrir la pantalla de nueva partida.
-3. En nueva partida se ofrecen 3 rasgos y 3 ambiciones aleatorias; al comenzar se crea una run con recursos iniciales, memoria vacía y día 1.
+3. En nueva partida se ofrecen 3 rasgos y 3 ambiciones aleatorias; al comenzar se crea una run con recursos iniciales —incluida Corona 50—, memoria vacía y día 1.
 4. Cada día se seleccionan hasta 2 eventos: primero consecuencias vencidas y después eventos disponibles del catálogo.
 5. El jugador resuelve cada evento eligiendo una opción.
 6. Cada elección aplica efectos inmediatos, etiquetas, actores recordados, acciones sobre issues, consecuencias diferidas e historial.

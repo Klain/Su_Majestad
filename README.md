@@ -1,6 +1,6 @@
 # Su Majestad
 
-**Versión actual:** `v0.6.0`
+**Versión actual:** `v0.6.1`
 
 `Su Majestad` es un roguelike de gestión de reino para móvil y escritorio, creado con HTML, CSS y JavaScript puro. La partida dura 30 días y cada jornada presenta asuntos del consejo que pueden cambiar recursos, abrir conflictos, recordar personajes o provocar consecuencias futuras.
 
@@ -16,6 +16,7 @@ Eres la corona de un reino en crisis. Debes mantener el equilibrio entre:
 - Pueblo
 - Nobleza
 - Fe
+- Corona
 - Amenaza
 
 El objetivo no es solo optimizar barras: tus decisiones dejan memoria narrativa mediante etiquetas, personajes recurrentes, eventos diferidos e issues activos.
@@ -32,7 +33,7 @@ El objetivo no es solo optimizar barras: tus decisiones dejan memoria narrativa 
 8. Pulsa **Terminar día** cuando hayas resuelto los 2 asuntos.
 9. Sobrevive hasta completar el día 30 para ganar y revisa la pantalla final de crónica.
 
-Pierdes si oro, comida, ejército, pueblo, nobleza o fe llegan a 0. También pierdes si amenaza llega a 100.
+Pierdes si oro, comida, ejército, pueblo, nobleza, fe o Corona llegan a 0. También pierdes si amenaza llega a 100.
 
 ## Características actuales
 
@@ -92,6 +93,12 @@ A partir de ahora, cada cambio importante debe:
 - Añadir finales más específicos según memoria e historial.
 - Mejorar la presentación de personajes recurrentes, memoria e issues.
 - Diseñar migraciones explícitas para futuras versiones de guardado.
+
+## v0.6.1 - Corona
+
+- Añade **Corona** como atributo del reino con valor inicial 50 para representar la confianza global en el monarca.
+- Corona aparece como recurso con tooltip propio, se incluye en resúmenes finales y provoca derrota al caer a 0.
+- Las partidas antiguas sin `crown` se normalizan con Corona 50 al cargar.
 
 ## v0.6.0 - Noticias del Reino y Crisis abiertas
 

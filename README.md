@@ -1,6 +1,6 @@
 # Su Majestad
 
-**Versión actual:** `v0.6.3`
+**Versión actual:** `v0.6.4`
 
 `Su Majestad` es un roguelike de gestión de reino para móvil y escritorio, creado con HTML, CSS y JavaScript puro. La partida dura 30 días y cada jornada presenta asuntos del consejo que pueden cambiar recursos, abrir conflictos, recordar personajes o provocar consecuencias futuras.
 
@@ -25,7 +25,7 @@ El objetivo no es solo optimizar barras: tus decisiones dejan memoria narrativa 
 
 1. Abre `index.html` en un navegador móvil o de escritorio.
 2. Desde el menú principal, continúa una partida guardada o crea un nuevo reinado.
-3. En nueva partida, elige 1 rasgo común del monarca y 1 ambición entre 3 opciones aleatorias.
+3. En nueva partida, elige 1 rasgo común del monarca, 1 ambición entre 3 opciones aleatorias y 1 religión inicial del reino.
 4. Al comenzar el día 10 y el día 20, elige una evolución relacionada para ampliar la cadena de rasgos del reinado.
 5. Cada partida dura 30 días.
 6. Cada día aparecen 2 eventos del consejo.
@@ -46,7 +46,7 @@ Pierdes si oro, comida, ejército, pueblo, nobleza, fe o Corona llegan a 0. Tamb
 - Catálogo modular con decisiones inmediatas, etiquetas, personajes recurrentes y consecuencias futuras.
 - Memoria persistente del reino: historial, etiquetas, personajes recurrentes y eventos pendientes.
 - Guardado automático con `localStorage`.
-- Sistemas roguelike ligeros: árbol evolutivo de rasgos, ambición de reinado, crisis de temporada, edictos y epílogo narrativo.
+- Sistemas roguelike ligeros: árbol evolutivo de rasgos, ambición de reinado, religión inicial del reino, crisis de temporada, edictos y epílogo narrativo.
 - Menú con continuar reinado, nuevo reinado y borrado de guardado.
 - Pantalla final con victoria/derrota, causa de caída, recursos, issues, decisiones recientes y crónica desplegable.
 - Sin dependencias y sin build step.
@@ -93,6 +93,13 @@ A partir de ahora, cada cambio importante debe:
 - Añadir finales más específicos según memoria e historial.
 - Mejorar la presentación de personajes recurrentes, memoria e issues.
 - Diseñar migraciones explícitas para futuras versiones de guardado.
+
+## v0.6.4 - Religión inicial del reino
+
+- Añade una elección de religión al crear nueva partida, junto al rasgo y la ambición.
+- La religión queda guardada en `state.religion`, aplica un bono inicial y aparece en la tarjeta de Reinado con tooltip.
+- Incluye tres prototipos pequeños orientados a Fe, Pueblo y Corona, con referencias reservadas para evolución o ruptura futuras.
+- Las partidas antiguas sin religión siguen cargando y se muestran como reinados sin credo inicial.
 
 ## v0.6.3 - Reformulación de familias
 

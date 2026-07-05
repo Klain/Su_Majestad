@@ -4,7 +4,7 @@
 
 - `index.html`: estructura de la aplicación, contenedores `menuScreen`, `setupScreen`, `gameScreen` y `endingScreen`, puntos de montaje de la interfaz y carga de scripts estáticos para GitHub Pages.
 - `style.css`: estilos visuales, responsive móvil/escritorio y componentes de cartas, recursos, mensajes, memoria e issues.
-- `game.js`: estado principal, `currentScreen`, setup de nueva run, bucle de partida, renderizado, tooltips reutilizables, guardado, carga, migración ligera de recursos faltantes, pantalla final y constante `GAME_VERSION`.
+- `game.js`: estado principal, `currentScreen`, setup de nueva run con rasgo, ambición y religión, bucle de partida, renderizado, tooltips reutilizables, guardado, carga, migración ligera de recursos faltantes, pantalla final y constante `GAME_VERSION`.
 - `event-manager.js`: motor de eventos, memoria, consecuencias, actores, issues, selección ponderada e interpolación de texto.
 - `events.js`: helpers globales `event`, `normalizeOption`, el catálogo agregado `events` y `registerEvents`.
 - `data/actors.js`: actores persistentes reutilizables por eventos y cadenas.
@@ -33,7 +33,7 @@ Los tooltips no cambian mecánicas ni estado persistente: solo añaden ayuda con
 
 1. Al cargar la página, `game.js` muestra el menú principal y comprueba si existe guardado válido en `localStorage`.
 2. Si no hay partida válida, no crea una run automáticamente; el jugador debe abrir la pantalla de nueva partida.
-3. En nueva partida se ofrecen 3 rasgos y 3 ambiciones aleatorias; al comenzar se crea una run con recursos iniciales —incluida Corona 50—, memoria vacía y día 1.
+3. En nueva partida se ofrecen 3 rasgos, 3 ambiciones aleatorias y las religiones prototipo; al comenzar se crea una run con recursos iniciales —incluida Corona 50—, memoria vacía y día 1.
 4. Cada día se seleccionan hasta 2 eventos: primero consecuencias vencidas y después eventos disponibles del catálogo.
 5. El jugador resuelve cada evento eligiendo una opción.
 6. Cada elección aplica efectos inmediatos, etiquetas, actores recordados, acciones sobre issues, consecuencias diferidas e historial.
@@ -41,6 +41,12 @@ Los tooltips no cambian mecánicas ni estado persistente: solo añaden ayuda con
 8. Al terminar el día, avanzan los issues activos, se roba el siguiente consejo o se gana si se superan los 30 días.
 9. Si `state.gameOver` es verdadero, `currentScreen` pasa a `ending` y se renderiza el cierre de run.
 10. Tras cada decisión o avance se guarda automáticamente y se renderiza la interfaz.
+
+## Religión inicial del reino
+
+`game.js` define `kingdomReligions` y `kingdomReligionsById`. Cada religión tiene `id`, `name`, `description`, `bonus` y `futureHooks` para reservar referencias de evolución o ruptura sin implementar todavía esos sistemas.
+
+Durante `newGame(selection)`, la religión seleccionada se guarda en `state.religion` y su `bonus` se aplica a los recursos iniciales después del bono del rasgo. `normalizeRoguelikeState()` llama a `normalizeReligionState()` para reconstruir religiones conocidas por id y dejar `null` en partidas antiguas sin religión. La UI de setup exige `selectedReligion`; la tarjeta de Reinado muestra la religión elegida con `formatReligionTooltip()`.
 
 ## Catálogo modular
 

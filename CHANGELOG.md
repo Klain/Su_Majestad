@@ -2,6 +2,18 @@
 
 Todas las versiones del proyecto deben usar formato semver y actualizar este archivo cuando haya cambios importantes.
 
+## v0.6.4 - 2026-07-05
+
+### Cambios realizados
+- Se añade `kingdomReligions` con tres religiones iniciales prototipo orientadas a Fe, Pueblo y Corona.
+- La pantalla de nueva partida exige elegir religión además de rasgo y ambición.
+- La religión elegida se guarda en `state.religion`, aplica su bono inicial al crear la partida y se muestra en Reinado y resumen final.
+- Se actualiza la versión a `v0.6.4`.
+
+### Correcciones
+- Las partidas antiguas sin religión normalizan `state.religion` como `null` y cargan sin bloquear la UI.
+- La comprobación de derrota vuelve a usar los recursos vitales actuales: oro, comida, ejército, pueblo, nobleza, fe y Corona.
+
 ## v0.6.3 - 2026-07-05
 
 ### Cambios realizados

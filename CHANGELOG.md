@@ -2,6 +2,17 @@
 
 Todas las versiones del proyecto deben usar formato semver y actualizar este archivo cuando haya cambios importantes.
 
+## v0.6.2 - 2026-07-05
+
+### Cambios realizados
+- Se añade `resourceConditions` a los eventos para bloquear su aparición según valores mínimos o máximos de cualquier atributo del reino.
+- Se añade `resourceWeights` para multiplicar el peso de aparición cuando un atributo cumple una regla, sin impedir el evento si no la cumple.
+- Se incorporan dos eventos mínimos de verificación: uno condicionado por comida baja y otro ponderado por Corona alta.
+- Se actualiza la versión a `v0.6.2`.
+
+### Correcciones
+- Los eventos sin reglas de recursos mantienen el comportamiento de selección existente.
+
 ## v0.6.1 - 2026-07-05
 
 ### Cambios realizados

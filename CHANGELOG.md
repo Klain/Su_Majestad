@@ -2,6 +2,19 @@
 
 Todas las versiones del proyecto deben usar formato semver y actualizar este archivo cuando haya cambios importantes.
 
+## v0.7.1 - 2026-07-07
+
+### Cambios realizados
+- Se elimina el directorio histórico `data/events/`, ya duplicado en el catálogo unificado `data/events-database.js` y no cargado desde `index.html`.
+- Se retira el alias interno `crises`, que apuntaba a `seasonalNews` y ya no tenía llamadas.
+- Se amplía la validación del editor de eventos para revisar `resourceConditions`, `resourceWeights`, efectos en outcomes y `defer.delay`.
+- Se valida el árbol de rasgos durante el arranque para detectar relaciones rotas antes de iniciar o cargar una partida.
+- Se actualiza la versión a `v0.7.1`.
+
+### Compatibilidad
+- Se conserva la lectura de `su-majestad-save-v1`, la migración de `activeCrisis`/`activeEdicts`, los alias de familias heredadas y el mapa de rasgos legacy.
+- El formato actual de eventos y la carga estática para GitHub Pages siguen usando `events.js` + `data/events-database.js` sin paso de build.
+
 ## v0.7.0 - 2026-07-07
 
 ### Cambios realizados

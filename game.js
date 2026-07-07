@@ -1,4 +1,4 @@
-const GAME_VERSION = "v0.7.0";
+const GAME_VERSION = "v0.7.1";
 const DEBUG_UI = false;
 const STORAGE_KEY = "su-majestad-save-v2";
 const LEGACY_STORAGE_KEY = "su-majestad-save-v1";
@@ -184,8 +184,6 @@ const seasonalNews = [
   { id: "schism", name: "Cisma religioso", description: "La iglesia exige respuestas.", duration: 4, families: ["clergy", "nobility"], daily: { faith: -1 } },
   { id: "court_intrigue", name: "Intriga cortesana", description: "Las casas nobles mueven sus piezas.", duration: 4, families: ["nobility", "steward"], daily: { nobility: -1 } }
 ].map((item) => ({ title: item.name, text: item.description, type: "seasonal", source: "seasonal", stacking: "replace", ...item }));
-const crises = seasonalNews;
-
 const edicts = [
   { id: "granaries", name: "Graneros reales", description: "Protege comida; a veces cuesta oro.", daily: { food: 1 }, every: 3, cost: { gold: -2 } },
   { id: "road_patrols", name: "Patrullas de caminos", description: "Reduce amenaza; desgasta al ejército.", daily: { threat: -1 }, every: 3, cost: { army: -1 } },
@@ -1198,4 +1196,5 @@ document.getElementById("setupBackButton").addEventListener("click", () => setSc
 document.getElementById("startRunButton").addEventListener("click", startSelectedRun);
 document.getElementById("menuButton").addEventListener("click", () => setScreen("menu"));
 document.getElementById("endDayButton").addEventListener("click", endDay);
+validateTraitTree();
 load();

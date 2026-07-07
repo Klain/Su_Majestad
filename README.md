@@ -1,6 +1,6 @@
 # Su Majestad
 
-**Versión actual:** `v0.6.4`
+**Versión actual:** `v0.7.0`
 
 `Su Majestad` es un roguelike de gestión de reino para móvil y escritorio, creado con HTML, CSS y JavaScript puro. La partida dura 30 días y cada jornada presenta asuntos del consejo que pueden cambiar recursos, abrir conflictos, recordar personajes o provocar consecuencias futuras.
 
@@ -38,7 +38,7 @@ Pierdes si oro, comida, ejército, pueblo, nobleza, fe o Corona llegan a 0. Tamb
 ## Características actuales
 
 - Interfaz responsive orientada a móvil.
-- Flujo completo de pantallas internas: menú, setup, partida activa y final de partida.
+- Flujo completo de pantallas internas: menú, setup, partida activa, modo desarrollador y final de partida.
 - Versión visible en la pantalla principal.
 - Sistema híbrido de eventos: sucesos simples, eventos modulares con escaladas y cadenas narrativas largas hechas a mano.
 - Issues activos del reino con actor, tipo, etapa, tensión, confianza, etiquetas, días activos y último día de evento.
@@ -49,6 +49,7 @@ Pierdes si oro, comida, ejército, pueblo, nobleza, fe o Corona llegan a 0. Tamb
 - Sistemas roguelike ligeros: árbol evolutivo de rasgos, ambición de reinado, religión inicial del reino, crisis de temporada, edictos y epílogo narrativo.
 - Menú con continuar reinado, nuevo reinado y borrado de guardado.
 - Pantalla final con victoria/derrota, causa de caída, recursos, issues, decisiones recientes y crónica desplegable.
+- Modo desarrollador con editor visual de eventos, búsqueda, filtros, validación, import/export JSON y borradores en `localStorage`.
 - Sin dependencias y sin build step.
 
 ## Cómo publicarlo en GitHub Pages
@@ -93,6 +94,14 @@ A partir de ahora, cada cambio importante debe:
 - Añadir finales más específicos según memoria e historial.
 - Mejorar la presentación de personajes recurrentes, memoria e issues.
 - Diseñar migraciones explícitas para futuras versiones de guardado.
+
+## v0.7.0 - Modo desarrollador y base de eventos unificada
+
+- Añade un botón **Modo desarrollador** al menú principal para abrir un editor interno de eventos.
+- El editor permite buscar, filtrar, crear, duplicar, borrar y editar eventos en memoria, con formulario visual y vista JSON avanzada.
+- Permite importar y exportar el catálogo completo como JSON; por limitación de GitHub Pages no escribe archivos reales desde el navegador.
+- Añade validación básica de IDs duplicados, campos obligatorios, opciones sin etiqueta, referencias `defer` rotas, tags mal formados, familias, actores y recursos inválidos.
+- Unifica el catálogo cargado en `data/events-database.js` y lo registra con `registerEvents(eventsDatabase)`.
 
 ## v0.6.4 - Religión inicial del reino
 

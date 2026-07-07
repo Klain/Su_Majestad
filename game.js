@@ -1,4 +1,4 @@
-const GAME_VERSION = "v0.6.4";
+const GAME_VERSION = "v0.7.0";
 const DEBUG_UI = false;
 const STORAGE_KEY = "su-majestad-save-v2";
 const LEGACY_STORAGE_KEY = "su-majestad-save-v1";
@@ -322,6 +322,7 @@ function render() {
   renderMenu();
   renderSetup();
   if (currentScreen === "setup") initTooltips();
+  if (currentScreen === "developer") return syncScreens(), renderDeveloperEditor();
   if (state?.gameOver && currentScreen !== "ending") currentScreen = "ending";
   syncScreens();
   if (currentScreen === "ending") return renderEnding();
@@ -1137,7 +1138,7 @@ function hasValidSave() {
 }
 
 function setScreen(screen) { currentScreen = screen; render(); }
-function syncScreens() { ["menu", "setup", "game", "ending"].forEach((screen) => document.getElementById(`${screen}Screen`).classList.toggle("hidden", currentScreen !== screen)); }
+function syncScreens() { ["menu", "setup", "game", "developer", "ending"].forEach((screen) => document.getElementById(`${screen}Screen`).classList.toggle("hidden", currentScreen !== screen)); }
 function renderMenu() {
   const hasSave = hasValidSave();
   document.getElementById("continueButton").disabled = !hasSave;

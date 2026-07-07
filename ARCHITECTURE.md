@@ -2,23 +2,21 @@
 
 ## Estructura actual de archivos
 
-- `index.html`: estructura de la aplicación, contenedores `menuScreen`, `setupScreen`, `gameScreen` y `endingScreen`, puntos de montaje de la interfaz y carga de scripts estáticos para GitHub Pages.
-- `style.css`: estilos visuales, responsive móvil/escritorio y componentes de cartas, recursos, mensajes, memoria e issues.
-- `game.js`: estado principal, `currentScreen`, setup de nueva run con rasgo, ambición y religión, bucle de partida, renderizado, tooltips reutilizables, guardado, carga, migración ligera de recursos faltantes, pantalla final y constante `GAME_VERSION`.
+- `index.html`: estructura de la aplicación, contenedores `menuScreen`, `setupScreen`, `gameScreen`, `developerScreen` y `endingScreen`, puntos de montaje de la interfaz y carga de scripts estáticos para GitHub Pages.
+- `style.css`: estilos visuales, responsive móvil/escritorio y componentes de cartas, recursos, mensajes, memoria, issues y editor de desarrollo.
+- `game.js`: estado principal, `currentScreen`, setup de nueva run con rasgo, ambición y religión, bucle de partida, renderizado, tooltips reutilizables, guardado, carga, migración ligera de recursos faltantes, pantalla final, integración de pantallas internas y constante `GAME_VERSION`.
 - `event-manager.js`: motor de eventos, memoria, consecuencias, actores, issues, selección ponderada e interpolación de texto.
 - `events.js`: helpers globales `event`, `normalizeOption`, el catálogo agregado `events` y `registerEvents`.
 - `data/actors.js`: actores persistentes reutilizables por eventos y cadenas.
 - `data/families.js`: familias narrativas usadas para clasificar eventos e issues.
-- `data/events/common-events.js`: eventos normales de aparición diaria.
-- `data/events/consequence-events.js`: eventos de consecuencia diferida que no se roban de forma normal.
-- `data/events/chains/border-chain.js`: cadena narrativa de la frontera.
-- `data/events/chains/noble-chain.js`: cadena narrativa de la reclamación noble.
+- `data/events-database.js`: catálogo unificado `eventsDatabase` cargado como script clásico y registrado con `registerEvents(eventsDatabase)`.
+- `dev-editor.js`: modo desarrollador, estado en memoria del editor, búsqueda/filtros, CRUD de eventos, import/export JSON, borrador local y validación básica.
 - `README.md`: documentación de uso, publicación, versionado y roadmap.
 - `CHANGELOG.md`: historial versionado de cambios.
 - `DEVLOG.md`: evolución de diseño y decisiones de producto.
 - `ARCHITECTURE.md`: esta guía técnica.
 
-El proyecto sigue sin usar dependencias externas ni paso de build. Por eso los módulos son scripts clásicos cargados en orden desde `index.html`: primero helpers y catálogo agregado, después datos, después `EventManager` y finalmente `game.js`.
+El proyecto sigue sin usar dependencias externas ni paso de build. Por eso los módulos son scripts clásicos cargados en orden desde `index.html`: primero helpers, actores, familias y catálogo unificado, después `EventManager`, `game.js` y finalmente `dev-editor.js`.
 
 
 ## Tooltips accesibles
@@ -61,9 +59,28 @@ function registerEvents(items) {
 
 Cada archivo bajo `data/events/` registra su parte del catálogo con `registerEvents([...])`. Mientras un archivo se cargue antes de `game.js`, el `EventManager` recibe el mismo array `events` que recibía antes, así que el motor actual sigue funcionando.
 
+## Catálogo unificado y modo desarrollador
+
+`data/events-database.js` define una única estructura `const eventsDatabase = [...]` con eventos ya normalizados mediante el helper global `event(...)`. Al final del archivo se llama a `registerEvents(eventsDatabase)`, por lo que `EventManager` sigue recibiendo el array global `events` sin cambios de contrato. Los archivos antiguos bajo `data/events/` quedan como referencia histórica, pero la carga de producción usa el fichero unificado desde `index.html`.
+
+`developerScreen` es una pantalla interna estática, no una ruta ni una aplicación separada. `dev-editor.js` clona el catálogo cargado al arranque en `developerState.events`; por tanto, crear, editar, importar o borrar dentro del editor no muta el array usado por una partida normal ya inicializada. Esta separación evita que el modo desarrollador afecte a partidas normales salvo que un autor copie manualmente un export al proyecto y recargue la página con el nuevo catálogo.
+
+El editor soporta:
+
+1. Lista de eventos con selección.
+2. Búsqueda por ID, título, texto, familias, tags y opciones.
+3. Filtros por `family`, `kind`, eventos normales/consecuencias, eventos con `issue` y eventos con `defer`.
+4. Formulario visual para campos frecuentes (`id`, `title`, `text`, `kind`, `family`, `families`, peso, días, tags, `issue` y campos principales de opciones).
+5. Vista **JSON avanzado** para reemplazar el objeto completo del evento seleccionado cuando el formulario visual no cubre una estructura compleja.
+6. Exportación del catálogo completo como JSON descargable.
+7. Importación de un array JSON de eventos.
+8. Borrador opcional en `localStorage` con la clave `su-majestad-dev-events-draft-v1`.
+
+La validación de `dev-editor.js` informa sin bloquear edición. Clasifica como errores los IDs duplicados, campos obligatorios ausentes, opciones sin `label`, `defer.eventId` y `defer.branches[].eventId` inexistentes, arrays de tags mal formados y recursos desconocidos en `immediate`, `effects` u `outcomes`. Clasifica como avisos las familias o actores referenciados que no existen en `families` o `actors`.
+
 ## Cómo crear un evento normal
 
-Añade el evento en `data/events/common-events.js` o en un nuevo archivo de `data/events/` cargado desde `index.html`.
+Añade el evento en `data/events-database.js` o créalo desde el modo desarrollador, exporta el JSON y copia el resultado al fichero unificado.
 
 ```js
 registerEvents([

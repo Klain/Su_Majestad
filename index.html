@@ -14,7 +14,7 @@
         <p class="eyebrow">Roguelike de gestión</p>
         <h1>Su Majestad</h1>
         <p class="subtitle">Cada reinado es una run de decisiones, memoria y consecuencias.</p>
-        <p class="version-badge" aria-label="Versión actual del juego">Versión <span id="gameVersion">v0.7.1</span></p>
+        <p class="version-badge" aria-label="Versión actual del juego">Versión <span id="gameVersion">v0.8.0</span></p>
         <div class="menu-actions">
           <button id="continueButton" class="primary-button" type="button">Continuar reinado</button>
           <button id="newRunButton" class="secondary-button" type="button">Nuevo reinado</button>
@@ -53,7 +53,7 @@
         <div>
           <p class="eyebrow">Roguelike de gestión</p>
           <h1>Su Majestad</h1>
-          <p class="version-badge" aria-label="Versión actual del juego">Versión <span id="gameVersionGame">v0.7.1</span></p>
+          <p class="version-badge" aria-label="Versión actual del juego">Versión <span id="gameVersionGame">v0.8.0</span></p>
         </div>
         <button id="menuButton" class="secondary-button" type="button">Menú</button>
       </header>
@@ -76,33 +76,19 @@
         <header class="developer-header">
           <div>
             <p class="eyebrow">Modo desarrollador</p>
-            <h2>Editor visual de eventos</h2>
-            <p>Los cambios viven en memoria o en borrador local. Exporta JSON y copia el catálogo al proyecto para hacerlo permanente.</p>
+            <h2>Base de datos visual de contenido</h2>
+            <p>Editor compacto inspirado en RPG Maker MV: eventos, familias, subfamilias y actores se editan en memoria, con exportación versionada y borrador local.</p>
           </div>
-          <button id="developerBackButton" class="secondary-button" type="button">Volver al menú</button>
+          <div class="developer-global-actions">
+            <button id="developerBackButton" class="secondary-button" type="button">Volver al menú</button>
+            <button id="developerExportButton" class="secondary-button" type="button">Exportar base de datos</button>
+            <label class="file-button">Importar base de datos<input id="developerImportInput" type="file" accept="application/json,.json"></label>
+            <button id="developerDraftButton" class="secondary-button" type="button">Guardar borrador</button>
+            <button id="developerLoadDraftButton" class="secondary-button" type="button">Cargar borrador</button>
+            <button id="developerValidateButton" class="primary-button" type="button">Validar todo</button>
+          </div>
         </header>
-        <div class="developer-toolbar">
-          <input id="developerSearch" type="search" placeholder="Buscar ID, título, familia, tags o texto">
-          <select id="developerFamilyFilter"><option value="">Todas las familias</option></select>
-          <select id="developerKindFilter"><option value="">Todos los tipos</option></select>
-          <select id="developerSpecialFilter"><option value="">Todos</option><option value="normal">Normales</option><option value="consequence">Consecuencias</option><option value="issue">Con issue</option><option value="defer">Con defer</option></select>
-        </div>
-        <div class="developer-actions">
-          <button id="developerNewButton" class="primary-button" type="button">Crear evento</button>
-          <button id="developerDuplicateButton" class="secondary-button" type="button">Duplicar</button>
-          <button id="developerDeleteButton" class="danger-button" type="button">Borrar</button>
-          <button id="developerExportButton" class="secondary-button" type="button">Exportar JSON</button>
-          <label class="file-button">Importar JSON<input id="developerImportInput" type="file" accept="application/json,.json"></label>
-          <button id="developerDraftButton" class="secondary-button" type="button">Guardar borrador</button>
-          <button id="developerLoadDraftButton" class="secondary-button" type="button">Cargar borrador</button>
-        </div>
-        <div id="developerValidation" class="developer-validation"></div>
-        <div class="developer-layout">
-          <aside id="developerEventList" class="developer-list" aria-label="Eventos"></aside>
-          <section class="developer-editor">
-            <div id="developerForm"></div>
-          </section>
-        </div>
+        <div id="developerRoot"></div>
       </article>
     </section>
 

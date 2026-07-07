@@ -1,6 +1,6 @@
 # Su Majestad
 
-**Versión actual:** `v0.7.1`
+**Versión actual:** `v0.8.0`
 
 `Su Majestad` es un roguelike de gestión de reino para móvil y escritorio, creado con HTML, CSS y JavaScript puro. La partida dura 30 días y cada jornada presenta asuntos del consejo que pueden cambiar recursos, abrir conflictos, recordar personajes o provocar consecuencias futuras.
 
@@ -49,8 +49,27 @@ Pierdes si oro, comida, ejército, pueblo, nobleza, fe o Corona llegan a 0. Tamb
 - Sistemas roguelike ligeros: árbol evolutivo de rasgos, ambición de reinado, religión inicial del reino, crisis de temporada, edictos y epílogo narrativo.
 - Menú con continuar reinado, nuevo reinado y borrado de guardado.
 - Pantalla final con victoria/derrota, causa de caída, recursos, issues, decisiones recientes y crónica desplegable.
-- Modo desarrollador con editor visual de eventos, búsqueda, filtros, validación, import/export JSON y borradores en `localStorage`.
+- Modo desarrollador como base de datos visual con pestañas de eventos, familias, subfamilias, actores, datos del juego y validación navegable.
 - Sin dependencias y sin build step.
+
+
+## Modo desarrollador
+
+El Modo desarrollador es una base de datos visual compacta para crear contenido sin editar JSON como interfaz principal. Incluye pestañas para Eventos, Familias, Subfamilias, Actores, Datos del juego y Validación. La pantalla mantiene una barra de acciones global para volver al menú, importar/exportar la base de datos versionada, guardar/cargar borrador local y validar todo.
+
+La exportación actual usa esta estructura compatible con GitHub Pages y sin backend:
+
+```json
+{
+  "schemaVersion": 1,
+  "events": [],
+  "families": [],
+  "subfamilies": [],
+  "actors": []
+}
+```
+
+`event.family` representa la familia principal que consume el motor. `event.families` se conserva como array compatible y el editor lo presenta como subfamilias o categorías narrativas para clasificar con más precisión sin romper eventos existentes ni partidas guardadas. Las referencias a actores, recursos y eventos diferidos se editan con selectores; el JSON avanzado queda como vía excepcional.
 
 ## Cómo publicarlo en GitHub Pages
 

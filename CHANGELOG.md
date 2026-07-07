@@ -2,6 +2,20 @@
 
 Todas las versiones del proyecto deben usar formato semver y actualizar este archivo cuando haya cambios importantes.
 
+## v0.8.0 - 2026-07-07
+
+### Cambios realizados
+- Se rediseña el Modo desarrollador como una base de datos visual compacta con pestañas principales para Eventos, Familias, Subfamilias, Actores, Datos del juego y Validación.
+- El editor de eventos adopta dos paneles, lista con scroll interno, filtros avanzados, pestañas internas y edición de una sola opción abierta a la vez.
+- Familia, subfamilias, recursos, actores y eventos diferidos se editan con selectores visuales siempre que el dato existe en la base de datos.
+- La exportación/importación y el borrador local pasan a usar una estructura versionada con `schemaVersion`, `events`, `families`, `subfamilies` y `actors`.
+- Se añade validación global navegable con errores y avisos para referencias rotas, recursos inválidos, probabilidades sospechosas, registros sin uso y tags de un solo uso.
+- Se actualiza la versión a `v0.8.0`.
+
+### Compatibilidad
+- `events[].families` se conserva como array compatible y se interpreta como subfamilias/categorías narrativas en el editor, sin cambiar `EventManager` ni el formato de partidas guardadas.
+- La base de datos de subfamilias se infiere inicialmente desde contenido existente para evitar una migración destructiva.
+
 ## v0.7.1 - 2026-07-07
 
 ### Cambios realizados

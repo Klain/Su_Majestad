@@ -1,4 +1,4 @@
-const GAME_VERSION = "v0.7.1";
+const GAME_VERSION = "v0.8.0";
 const DEBUG_UI = false;
 const STORAGE_KEY = "su-majestad-save-v2";
 const LEGACY_STORAGE_KEY = "su-majestad-save-v1";

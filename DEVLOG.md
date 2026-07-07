@@ -155,3 +155,9 @@ Para no reescribir todavía todo el catálogo, el contenido existente se remapea
 La creación del reinado suma un tercer eje de identidad: la religión del reino. A diferencia del rasgo, que describe al monarca, y de la ambición, que marca un objetivo de crónica, la religión define cómo se articula la Fe como institución social y política desde el primer día.
 
 La implementación se mantiene deliberadamente pequeña: tres prototipos con bonos iniciales y referencias de diseño para evolución o ruptura futuras. No se añaden crisis religiosas ni packs de eventos, porque el objetivo de esta tarea es preparar el estado, la UI y la compatibilidad de guardado antes de construir contenido sistémico encima.
+
+## 2026-07-07 - Modo desarrollador como base de datos visual
+
+Se transforma el modo desarrollador de editor vertical de eventos a una base de datos visual compacta. La decisión de compatibilidad más importante es mantener `events[].families` como el campo serializado existente y tratarlo en la UI como subfamilias o categorías narrativas. Así los eventos antiguos, `EventManager`, las partidas guardadas y las consecuencias diferidas continúan usando los mismos IDs y estructura.
+
+La nueva colección editable `subfamilies` se exporta junto con eventos, familias y actores en una estructura versionada, pero se infiere inicialmente desde el catálogo cargado cuando no existe un archivo dedicado. Esta migración conservadora mejora la creación de contenido sin exigir reescribir el motor ni convertir todo el proyecto a JSON de golpe.

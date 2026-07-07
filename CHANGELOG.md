@@ -2,6 +2,19 @@
 
 Todas las versiones del proyecto deben usar formato semver y actualizar este archivo cuando haya cambios importantes.
 
+## v0.7.0 - 2026-07-07
+
+### Cambios realizados
+- Se añade **Modo desarrollador** al menú principal con una pantalla interna de editor visual de eventos.
+- El editor lista el catálogo, busca por contenido, filtra por familia, tipo y rasgos especiales, y permite crear, duplicar, borrar y editar eventos en memoria.
+- Se añade import/export JSON y borrador opcional en `localStorage` bajo `su-majestad-dev-events-draft-v1`, sin backend ni escritura directa de archivos.
+- Se unifica el catálogo en `data/events-database.js` como `const eventsDatabase = [...]` registrado con `registerEvents(eventsDatabase)`.
+- Se añade validación básica para IDs duplicados, campos obligatorios, opciones sin etiqueta, referencias `defer` rotas, arrays de tags, familias, actores y recursos inválidos.
+- Se actualiza la versión a `v0.7.0`.
+
+### Correcciones
+- La partida normal conserva el catálogo registrado al cargar la página y no usa cambios de desarrollo salvo que el usuario importe/edite dentro del modo desarrollador.
+
 ## v0.6.4 - 2026-07-05
 
 ### Cambios realizados

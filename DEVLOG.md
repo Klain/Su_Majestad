@@ -42,10 +42,18 @@ Junto a los eventos modulares existen cadenas más manuales, escritas con intenc
 
 Ejemplo actual: la crisis de la marca oriental funciona como una línea con varias escenas encadenadas y decisiones que pueden convertir la frontera en alianza, autonomía o abandono.
 
+## v0.7.0 - Modo desarrollador
+
+Se añade un modo desarrollador accesible desde el menú principal para que el catálogo pueda tratarse como una base de datos editable al estilo RPG Maker. El objetivo de diseño es acelerar iteración narrativa sin introducir backend ni dependencias: el navegador permite prototipar cambios, validar referencias y exportar JSON para copiarlo después al proyecto.
+
+La pantalla separa claramente el flujo de juego normal del flujo de autoría. Editar, importar o cargar borradores solo afecta a la sesión del editor; las partidas normales siguen usando el catálogo registrado al arranque. La UI avisa que exportar genera el fichero que debe copiarse manualmente al repositorio.
+
+La validación no bloquea la edición porque durante autoría es útil guardar estados incompletos. En lugar de impedir cambios, muestra errores y avisos visibles para detectar IDs duplicados, referencias `defer` rotas, recursos desconocidos, familias o actores no declarados y opciones incompletas.
+
 ## Issues activos de desarrollo
 
-- Separar el catálogo en módulos cuando el volumen de eventos crezca.
-- Añadir validación automática para detectar IDs duplicados, consecuencias inexistentes y opciones mal formadas.
+- Ampliar el editor con controles especializados para issues, actores y outcomes complejos.
+- Añadir pruebas automáticas que reutilicen las reglas de validación del modo desarrollador.
 - Diseñar más eventos que oculten parte de su consecuencia narrativa sin hacer injusto el sistema.
 - Mejorar cómo la interfaz explica memoria, issues e historial al jugador.
 - Definir una estrategia de migraciones para futuras versiones de guardado.

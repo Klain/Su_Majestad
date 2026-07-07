@@ -14,10 +14,11 @@
         <p class="eyebrow">Roguelike de gestión</p>
         <h1>Su Majestad</h1>
         <p class="subtitle">Cada reinado es una run de decisiones, memoria y consecuencias.</p>
-        <p class="version-badge" aria-label="Versión actual del juego">Versión <span id="gameVersion">v0.6.4</span></p>
+        <p class="version-badge" aria-label="Versión actual del juego">Versión <span id="gameVersion">v0.7.0</span></p>
         <div class="menu-actions">
           <button id="continueButton" class="primary-button" type="button">Continuar reinado</button>
           <button id="newRunButton" class="secondary-button" type="button">Nuevo reinado</button>
+          <button id="developerModeButton" class="secondary-button" type="button">Modo desarrollador</button>
           <button id="deleteSaveButton" class="danger-button hidden" type="button">Borrar partida</button>
         </div>
       </article>
@@ -52,7 +53,7 @@
         <div>
           <p class="eyebrow">Roguelike de gestión</p>
           <h1>Su Majestad</h1>
-          <p class="version-badge" aria-label="Versión actual del juego">Versión <span id="gameVersionGame">v0.6.4</span></p>
+          <p class="version-badge" aria-label="Versión actual del juego">Versión <span id="gameVersionGame">v0.7.0</span></p>
         </div>
         <button id="menuButton" class="secondary-button" type="button">Menú</button>
       </header>
@@ -70,6 +71,41 @@
       <section class="actions"><button id="endDayButton" class="primary-button" type="button" disabled>Terminar día</button></section>
     </section>
 
+    <section id="developerScreen" class="screen hidden">
+      <article class="developer-card">
+        <header class="developer-header">
+          <div>
+            <p class="eyebrow">Modo desarrollador</p>
+            <h2>Editor visual de eventos</h2>
+            <p>Los cambios viven en memoria o en borrador local. Exporta JSON y copia el catálogo al proyecto para hacerlo permanente.</p>
+          </div>
+          <button id="developerBackButton" class="secondary-button" type="button">Volver al menú</button>
+        </header>
+        <div class="developer-toolbar">
+          <input id="developerSearch" type="search" placeholder="Buscar ID, título, familia, tags o texto">
+          <select id="developerFamilyFilter"><option value="">Todas las familias</option></select>
+          <select id="developerKindFilter"><option value="">Todos los tipos</option></select>
+          <select id="developerSpecialFilter"><option value="">Todos</option><option value="normal">Normales</option><option value="consequence">Consecuencias</option><option value="issue">Con issue</option><option value="defer">Con defer</option></select>
+        </div>
+        <div class="developer-actions">
+          <button id="developerNewButton" class="primary-button" type="button">Crear evento</button>
+          <button id="developerDuplicateButton" class="secondary-button" type="button">Duplicar</button>
+          <button id="developerDeleteButton" class="danger-button" type="button">Borrar</button>
+          <button id="developerExportButton" class="secondary-button" type="button">Exportar JSON</button>
+          <label class="file-button">Importar JSON<input id="developerImportInput" type="file" accept="application/json,.json"></label>
+          <button id="developerDraftButton" class="secondary-button" type="button">Guardar borrador</button>
+          <button id="developerLoadDraftButton" class="secondary-button" type="button">Cargar borrador</button>
+        </div>
+        <div id="developerValidation" class="developer-validation"></div>
+        <div class="developer-layout">
+          <aside id="developerEventList" class="developer-list" aria-label="Eventos"></aside>
+          <section class="developer-editor">
+            <div id="developerForm"></div>
+          </section>
+        </div>
+      </article>
+    </section>
+
     <section id="endingScreen" class="screen hidden">
       <article id="endingCard" class="ending-card"></article>
     </section>
@@ -79,15 +115,9 @@
   <script src="data/actors.js"></script>
   <script src="data/actors-pack-01.js"></script>
   <script src="data/families.js"></script>
-  <script src="data/events/common-events.js"></script>
-  <script src="data/events/consequence-events.js"></script>
-  <script src="data/events/chains/border-chain.js"></script>
-  <script src="data/events/chains/noble-chain.js"></script>
-  <script src="data/events/packs/modular-commerce-people.js"></script>
-  <script src="data/events/packs/modular-faith-nobility.js"></script>
-  <script src="data/events/packs/modular-army-crime.js"></script>
-  <script src="data/events/packs/modular-realm-frontier.js"></script>
+  <script src="data/events-database.js"></script>
   <script src="event-manager.js"></script>
   <script src="game.js"></script>
+  <script src="dev-editor.js"></script>
 </body>
 </html>

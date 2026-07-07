@@ -57,11 +57,9 @@ function registerEvents(items) {
 }
 ```
 
-Cada archivo bajo `data/events/` registra su parte del catálogo con `registerEvents([...])`. Mientras un archivo se cargue antes de `game.js`, el `EventManager` recibe el mismo array `events` que recibía antes, así que el motor actual sigue funcionando.
-
 ## Catálogo unificado y modo desarrollador
 
-`data/events-database.js` define una única estructura `const eventsDatabase = [...]` con eventos ya normalizados mediante el helper global `event(...)`. Al final del archivo se llama a `registerEvents(eventsDatabase)`, por lo que `EventManager` sigue recibiendo el array global `events` sin cambios de contrato. Los archivos antiguos bajo `data/events/` quedan como referencia histórica, pero la carga de producción usa el fichero unificado desde `index.html`.
+`data/events-database.js` define una única estructura `const eventsDatabase = [...]` con eventos ya normalizados mediante el helper global `event(...)`. Al final del archivo se llama a `registerEvents(eventsDatabase)`, por lo que `EventManager` sigue recibiendo el array global `events` sin cambios de contrato. El catálogo modular anterior bajo `data/events/` fue eliminado en `v0.7.1` porque era una copia histórica no cargada desde `index.html`; cualquier recuperación debe hacerse desde el historial Git.
 
 `developerScreen` es una pantalla interna estática, no una ruta ni una aplicación separada. `dev-editor.js` clona el catálogo cargado al arranque en `developerState.events`; por tanto, crear, editar, importar o borrar dentro del editor no muta el array usado por una partida normal ya inicializada. Esta separación evita que el modo desarrollador afecte a partidas normales salvo que un autor copie manualmente un export al proyecto y recargue la página con el nuevo catálogo.
 
@@ -106,7 +104,7 @@ Reglas prácticas:
 
 ## Cómo crear un evento de consecuencia
 
-Los eventos de consecuencia deben vivir preferentemente en `data/events/consequence-events.js` o junto a su cadena en `data/events/chains/`. Declara `kind: "consequence"` para que no aparezcan como evento diario normal.
+Los eventos de consecuencia deben vivir en `data/events-database.js`, preferentemente junto al bloque o cadena narrativa relacionada. Declara `kind: "consequence"` para que no aparezcan como evento diario normal.
 
 ```js
 event(
@@ -146,7 +144,7 @@ Las ramas de `outcomes` y `defer.branches` pueden declarar opcionalmente `tone: 
 
 ## Cómo crear una cadena
 
-Una cadena es un grupo de eventos relacionados dentro de `data/events/chains/`. Usa un archivo propio cuando tenga varios pasos o un arco dramático claro.
+Una cadena es un grupo de eventos relacionados dentro de `data/events-database.js`. Mantén sus pasos juntos y separados por un comentario de bloque cuando tenga varios pasos o un arco dramático claro.
 
 Estructura recomendada:
 
@@ -158,14 +156,12 @@ Estructura recomendada:
 Ejemplo de ruta:
 
 ```js
-// data/events/chains/example-chain.js
-registerEvents([
-  event("example_start", "Inicio", "...", [["Actuar", {}, { defer: [{ delay: 4, eventId: "example_middle" }] }]], { family: "diplomat" }),
-  event("example_middle", "Nudo", "...", [["Resolver", {}, { addTags: ["example_resolved"] }]], { kind: "consequence", family: "diplomat" })
-]);
+// data/events-database.js
+event("example_start", "Inicio", "...", [["Actuar", {}, { defer: [{ delay: 4, eventId: "example_middle" }] }]], { family: "diplomat" }),
+event("example_middle", "Nudo", "...", [["Resolver", {}, { addTags: ["example_resolved"] }]], { kind: "consequence", family: "diplomat" })
 ```
 
-Si creas un archivo nuevo, añádelo a `index.html` antes de `event-manager.js`.
+Si añades contenido nuevo, incorpóralo al array `eventsDatabase`; no hace falta tocar `index.html` mientras el catálogo siga unificado.
 
 ## Cómo crear un actor
 

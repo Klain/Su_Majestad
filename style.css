@@ -529,6 +529,64 @@ h2 { margin: 0; }
 .dev-chip-box { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; max-height: 140px; overflow: auto; }
 .dev-chip { align-items: center; background: rgba(244,195,91,0.1); border: 1px solid rgba(244,195,91,0.2); border-radius: 999px; display: inline-flex !important; font-size: 0.78rem !important; gap: 4px !important; padding: 5px 8px; }
 .dev-chip input { width: auto !important; }
+
+.developer-switch-field {
+  align-items: center;
+  background: rgba(59, 42, 79, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  display: flex !important;
+  flex-direction: row;
+  gap: 12px !important;
+  justify-content: space-between;
+  min-height: 54px;
+  padding: 10px 12px;
+}
+
+.developer-switch-field input {
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  width: 1px !important;
+}
+
+.developer-switch {
+  background: rgba(18, 13, 25, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  flex: 0 0 52px;
+  height: 30px;
+  position: relative;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.developer-switch::after {
+  background: var(--muted);
+  border-radius: 50%;
+  content: "";
+  height: 22px;
+  left: 3px;
+  position: absolute;
+  top: 3px;
+  transition: background 0.18s ease, transform 0.18s ease;
+  width: 22px;
+}
+
+.developer-switch-field input:checked + .developer-switch {
+  background: linear-gradient(135deg, #7d4cff, #d49446);
+  border-color: rgba(244, 195, 91, 0.62);
+}
+
+.developer-switch-field input:checked + .developer-switch::after {
+  background: #fff7e8;
+  transform: translateX(22px);
+}
+
+.developer-switch-field:focus-within {
+  box-shadow: 0 0 0 2px rgba(244, 195, 91, 0.22);
+}
+
 .developer-option-summary { align-items: center; display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr) auto; }
 .developer-option-summary > button { background: transparent; border: 0; color: var(--text); display: grid; gap: 4px; text-align: left; }
 .developer-option-summary small, .developer-empty, .developer-reference small { color: var(--muted); }

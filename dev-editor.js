@@ -100,7 +100,7 @@ function renderValidationTab() { const groups = [["Errores", developerState.vali
 function developerFieldKey(field) { return String(field || "").split(":")[0]; }
 function developerTooltip(field) { return DEV_FIELD_TOOLTIPS[developerFieldKey(field)] || ""; }
 function developerTooltipAttributes(field) { const tooltip = developerTooltip(field); return tooltip ? ` title="${escapeHtml(tooltip)}" aria-label="${escapeHtml(tooltip)}"` : ""; }
-function labelWithTooltip(label, field) { const tooltip = developerTooltip(field); return `${escapeHtml(label)}${tooltip ? ` <span class="dev-tooltip" title="${escapeHtml(tooltip)}" aria-label="${escapeHtml(tooltip)}">ⓘ</span>` : ""}`; }
+function labelWithTooltip(label) { return escapeHtml(label); }
 function textInput(field,label,value="",record="events") { return `<label${developerTooltipAttributes(field)}>${labelWithTooltip(label, field)}<input data-field="${field}" data-record="${record}" value="${escapeHtml(value ?? "")}"${developerTooltipAttributes(field)}></label>`; }
 function numberInput(field,label,value,record="events") { return `<label${developerTooltipAttributes(field)}>${labelWithTooltip(label, field)}<input type="number" data-field="${field}" data-record="${record}" value="${Number.isFinite(value) ? value : ""}"${developerTooltipAttributes(field)}></label>`; }
 function textareaInput(field,label,value="",json=false,record="events") { return `<label class="wide"${developerTooltipAttributes(field)}>${labelWithTooltip(label, field)}<textarea data-field="${field}" data-record="${record}" ${json ? "data-json='true'" : ""}${developerTooltipAttributes(field)}>${escapeHtml(value ?? "")}</textarea></label>`; }

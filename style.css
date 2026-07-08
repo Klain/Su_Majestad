@@ -573,3 +573,19 @@ h2 { margin: 0; }
   font-weight: 700;
   margin-left: 0.25rem;
 }
+
+.developer-option-settings {
+  background: rgba(59,42,79,0.24);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  margin: 0 0 10px;
+  padding: 10px;
+}
+
+.developer-success-line {
+  align-items: center;
+  display: grid !important;
+  grid-column: 1 / -1;
+  grid-template-columns: max-content minmax(90px, 140px);
+  justify-content: start;
+}

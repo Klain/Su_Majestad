@@ -15,7 +15,7 @@ const DEV_FIELD_TOOLTIPS = {
   requiresTags: "Flags requeridas: marcas narrativas persistentes de memoria global que deben existir para que aparezca este evento (esto ocurrió / esta ruta fue elegida).",
   forbiddenTags: "Flags prohibidas: marcas narrativas persistentes de memoria global que bloquean este evento si ya ocurrieron o esa ruta fue elegida.",
   "option.addTags": "Flags añadidas a la memoria global del reino al elegir esta opción. Una flag marca que esto ocurrió o que esta ruta fue elegida.",
-  "option.issues": "Lista JSON de crisis o issues que crea o modifica esta opción."
+  "option.issues": "Lista JSON de crisis o issues que crea o modifica esta opción.",
   probabilistic: "Activa el chequeo de éxito/fallo común a nivel de evento.",
   failureResult: "Resultado común que se ejecuta cuando falla una opción probabilística.",
   "option.successChance": "Porcentaje de éxito de esta opción. 100% nunca falla.",

@@ -410,7 +410,7 @@ function renderEvents() {
   if (currentScreen !== "game" || !state) return;
   document.getElementById("events").innerHTML = state.todaysEvents.map((item, eventIndex) => {
     const resolved = state.resolved.includes(eventIndex) || state.gameOver || state.traitEvolutionPending;
-    const options = item.options.map((option, optionIndex) => `<button class="option-button" type="button" ${resolved ? "disabled" : ""} data-event="${eventIndex}" data-option="${optionIndex}"><span class="option-title"><span>${option.label}</span>${tooltip("ⓘ", formatChoiceTooltip(option), "icon option-help")}</span><span class="effects chips" aria-label="Consecuencias previstas">${formatChoicePreview(option)}</span></button>`).join("");
+    const options = item.options.map((option, optionIndex) => `<button class="option-button" type="button" ${resolved ? "disabled" : ""} data-event="${eventIndex}" data-option="${optionIndex}"><span class="option-title"><span>${option.label}</span>${tooltip("ⓘ", formatChoiceTooltip(option, item), "icon option-help")}</span><span class="effects chips" aria-label="Consecuencias previstas">${formatChoicePreview(option, item)}</span></button>`).join("");
     return `<article class="event-card ${resolved ? "resolved" : ""}"><h3 class="event-title">${item.title}</h3><p class="event-text">${item.text}</p><div class="options">${options}</div></article>`;
   }).join("");
 
@@ -779,20 +779,26 @@ function isAmbitionComplete() {
   return false;
 }
 
-function formatChoiceTooltip(option) {
+function formatChoiceTooltip(option, eventItem = null) {
   const parts = [];
-  if (option.outcomes?.length) parts.push(formatOutcomeProbabilityText(option.outcomes));
+  if (eventItem?.probabilistic) parts.push(formatOptionSuccessText(option));
   else parts.push("Decisión de efecto previsible.");
   if (option.defer?.length) parts.push(formatDeferredProbabilityText(option.defer));
   if (option.addTags?.length) parts.push("Dejará memoria política.");
   if (option.addNews?.length) parts.push("Creará una noticia temporal del reino.");
   if (option.issues?.length) parts.push("Puede alterar una crisis persistente.");
   if (DEBUG_UI) {
-    const directEffects = option.outcomes?.length ? summarizeWeightedOutcomes(option.outcomes) : (option.immediate || option.effects || {});
+    const directEffects = option.immediate || option.effects || {};
     const effectText = formatEffectsText(directEffects);
     if (effectText) parts.push(`DEBUG impacto previsto: ${effectText}.`);
   }
   return parts.filter(Boolean).join(" ") || "Decisión sin impacto visible inmediato; la corte observará el gesto.";
+}
+
+function formatOptionSuccessText(option) {
+  const chance = Math.round(option.successChance ?? 100);
+  if (chance >= 100) return "Éxito seguro: esta opción no falla.";
+  return `Probabilidad de éxito: ${chance}%. Si falla, no se aplica esta opción y se ejecuta el fallo común del evento.`;
 }
 
 function summarizeWeightedOutcomes(outcomes = []) {
@@ -907,11 +913,11 @@ function formatEdictTooltip(edict) {
 }
 
 
-function formatChoicePreview(option) {
+function formatChoicePreview(option, eventItem = null) {
   const chips = [];
-  if (option.outcomes?.length) chips.push(...formatOutcomeChips(option.outcomes));
-  else chips.push(...formatEffectChips(option.immediate || option.effects || {}));
-  chips.push(...formatStoryHookChips(option));
+  chips.push(...formatEffectChips(option.immediate || option.effects || {}));
+  if (eventItem?.probabilistic && (option.successChance ?? 100) < 100) chips.unshift({ icon: "🎲", text: `${Math.round(option.successChance ?? 100)}%`, tone: "uncertain", tooltipText: "Si falla, no se aplicará esta opción: se ejecutará el fallo común del evento." });
+  chips.push(...formatStoryHookChips(option, eventItem));
 
   const uniqueChips = dedupeChips(chips);
   const visible = uniqueChips.slice(0, 4);
@@ -1013,13 +1019,13 @@ function dedupeChips(chips) {
   });
 }
 
-function formatStoryHookChips(option) {
+function formatStoryHookChips(option, eventItem = null) {
   const hooks = [];
   if (option.addTags?.length) hooks.push({ icon: "🧠", text: "Memoria", tone: "memory" });
   if (option.addNews?.length) hooks.push({ icon: "📰", text: "Noticia", tone: "news" });
   if (option.issues?.length) hooks.push({ icon: "⚖️", text: "Crisis", tone: "conflict" });
   if (option.defer?.length) hooks.push({ icon: "⏳", text: "Consecuencia", tone: "consequence" });
-  if (option.outcomes?.length) hooks.push({ icon: "🎲", text: "Azar", tone: "uncertain" });
+  if ((eventItem?.probabilistic) && (option.successChance ?? 100) < 100) hooks.push({ icon: "🎲", text: "Riesgo", tone: "uncertain" });
   return hooks;
 }
 

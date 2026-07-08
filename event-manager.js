@@ -140,15 +140,38 @@ class EventManager {
   }
 
   applyChoice(state, eventItem, choice) {
-    const outcome = this.pickOutcome(choice.outcomes || []);
-    const immediate = outcome ? (outcome.immediate || outcome.effects || {}) : (choice.immediate || choice.effects || {});
+    const resolution = this.resolveChoice(eventItem, choice);
+    const result = resolution.result;
+    const immediate = result.immediate || result.effects || {};
     this.applyEffects(state, immediate);
-    this.addTags(state, choice.addTags || []);
-    this.addNews(state, choice.addNews || [], eventItem.kind === "consequence" ? "consequence" : "event", eventItem.id);
-    this.rememberCharacters(state, choice.characters || []);
-    this.applyIssueActions(state, choice.issues || [], eventItem);
-    this.scheduleDeferred(state, choice.defer || [], eventItem.id);
-    this.recordHistory(state, eventItem, choice, outcome, immediate);
+    this.addTags(state, result.addTags || []);
+    this.addNews(state, result.addNews || [], eventItem.kind === "consequence" ? "consequence" : "event", eventItem.id);
+    this.rememberCharacters(state, result.characters || []);
+    this.applyIssueActions(state, result.issues || [], eventItem);
+    this.scheduleDeferred(state, result.defer || [], eventItem.id);
+    this.recordHistory(state, eventItem, choice, resolution, immediate);
+  }
+
+  resolveChoice(eventItem, choice) {
+    if (!eventItem.probabilistic) return { success: true, result: choice, resultText: choice.resultText || null };
+    const successChance = this.normalizeSuccessChance(choice.successChance);
+    if (successChance >= 100 || this.random() * 100 < successChance) {
+      return { success: true, successChance, result: choice, resultText: choice.resultText || null };
+    }
+    const failureResult = eventItem.failureResult || eventItem.failure || {};
+    return {
+      success: false,
+      successChance,
+      result: failureResult,
+      resultText: failureResult.resultText || failureResult.text || "La opción fracasa y la corte sufre el resultado común de fallo."
+    };
+  }
+
+  normalizeSuccessChance(value) {
+    if (value === undefined || value === null || value === "") return 100;
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return 100;
+    return Math.max(0, Math.min(100, numeric));
   }
 
   applyEffects(state, effects) {
@@ -230,17 +253,18 @@ class EventManager {
     });
   }
 
-  recordHistory(state, eventItem, choice, outcome = null, immediate = {}) {
-    const resultText = outcome?.text || choice.resultText || "La corte toma nota de tu decisión.";
+  recordHistory(state, eventItem, choice, resolution = null, immediate = {}) {
+    const resultText = resolution?.resultText || resolution?.result?.text || choice.resultText || "La corte toma nota de tu decisión.";
     const entry = {
       day: state.day,
       eventId: eventItem.id,
       eventTitle: eventItem.title,
       family: this.normalizeFamily(eventItem.family) || null,
       choice: choice.label,
-      tags: choice.addTags || [],
+      tags: resolution?.result?.addTags || [],
       resultText,
-      outcomeText: outcome?.text || null,
+      success: resolution?.success ?? true,
+      successChance: resolution?.successChance ?? null,
       effects: { ...immediate }
     };
     state.history.push(entry);

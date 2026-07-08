@@ -93,7 +93,8 @@ function renderEventsDatabase() { const items = filteredDeveloperEvents(), selec
 function renderEventListItem(e) { const hasError = developerState.validation.errors.some((p) => p.recordId === e.id), hasWarning = developerState.validation.warnings.some((p) => p.recordId === e.id); return `<button class="developer-list-item ${e.id === developerState.selected.events ? "selected" : ""}" data-record-type="events" data-select-record="${escapeHtml(e.id)}" type="button"><strong>${hasError ? "⛔ " : hasWarning ? "⚠️ " : ""}${escapeHtml(e.id || "sin-id")}</strong><span>${escapeHtml(e.title || "Sin título")}</span><small>${escapeHtml(e.family || "sin familia")} · ${escapeHtml(e.kind || "normal")}</small></button>`; }
 function renderEventEditor(e) { const tabs = ["general","options","conditions","consequences","json"], labels = { general:"General", options:"Opciones", conditions:"Condiciones", consequences:"Consecuencias", json:"JSON avanzado" }; return `<h3>${escapeHtml(e.title || e.id)}</h3><nav class="developer-subtabs">${tabs.map((t) => `<button class="${developerState.eventTab === t ? "active" : ""}" data-event-tab="${t}" type="button">${labels[t]}</button>`).join("")}</nav>${renderEventTab(e)}`; }
 function renderEventTab(e) { if (developerState.eventTab === "options") return renderEventOptions(e); if (developerState.eventTab === "conditions") return `<div class="developer-form-grid">${tagSelector("requiresTags","Flags requeridas",e.requiresTags)}${tagSelector("forbiddenTags","Flags prohibidas",e.forbiddenTags)}${textInput("issue","Issue",e.issue || "")}${textareaInput("resourceConditions","Resource conditions JSON", JSON.stringify(e.resourceConditions || {}, null, 2), true)}${textareaInput("resourceWeights","Resource weights JSON", JSON.stringify(e.resourceWeights || [], null, 2), true)}</div>`; if (developerState.eventTab === "consequences") return renderConsequences(e); if (developerState.eventTab === "json") return `<div class="developer-json open"><textarea id="developerAdvancedJson" spellcheck="false">${escapeHtml(JSON.stringify(e, null, 2))}</textarea><div class="developer-actions compact"><button class="primary-button" data-action="apply-event-json" type="button">Aplicar JSON</button><button class="secondary-button" data-action="format-event-json" type="button">Formatear JSON</button></div>${developerState.jsonError ? `<p class="validation-error">${escapeHtml(developerState.jsonError)}</p>` : ""}</div>`; return `<div class="developer-form-grid">${textInput("id","ID",e.id)}${textInput("title","Título",e.title)}${textareaInput("text","Texto",e.text)}<label>Familia<select data-change-field="family">${familyOptions(e.family || "")}</select></label><label>Kind<select data-change-field="kind"><option value="">normal</option><option value="normal" ${(e.kind || "normal") === "normal" ? "selected" : ""}>normal</option><option value="consequence" ${e.kind === "consequence" ? "selected" : ""}>consequence</option></select></label>${numberInput("weight","Weight",e.weight)}${numberInput("minDay","MinDay",e.minDay)}${numberInput("maxDay","MaxDay",e.maxDay)}${switchInput("probabilistic", "Probabilístico", e.probabilistic)}${e.probabilistic ? textareaInput("failureResult", "Fallo común JSON", JSON.stringify(e.failureResult || {}, null, 2), true) : ""}</div>`; }
-function renderEventOptions(e) { return `<div class="developer-actions compact"><button class="primary-button" data-action="add-option" type="button">Añadir opción</button></div><div class="developer-options">${(e.options || []).map((o,i) => renderOptionCard(o,i,e)).join("")}</div>`; }
+function isEventProbabilistic(e) { return e?.probabilistic === true; }
+function renderEventOptions(e) { const showSuccessChance = isEventProbabilistic(e); return `<div class="developer-actions compact"><button class="primary-button" data-action="add-option" type="button">Añadir opción</button></div><div class="developer-options">${(e.options || []).map((o,i) => renderOptionCard(o,i,showSuccessChance)).join("")}</div>`; }
 function renderOptionTitleInput(o, i) {
   return `<label class="developer-option-title"${developerTooltipAttributes("option.label")}>
     <span>Opción ${i + 1}</span>
@@ -101,11 +102,11 @@ function renderOptionTitleInput(o, i) {
     <input data-field="option.label" data-index="${i}" value="${escapeHtml(o.label || "")}"${developerTooltipAttributes("option.label")}>
   </label>`;
 }
-function renderOptionCard(o, i, event) { const open = developerState.optionOpen === i; return `<article class="developer-option ${open ? "open" : ""}"><div class="developer-option-summary">${open ? renderOptionTitleInput(o, i) : `<button type="button" data-action="open-option" data-index="${i}"><strong>Opción ${i + 1}</strong><small>${summarizeOption(o)}</small></button>`}<div><button data-action="duplicate-option" data-index="${i}" type="button">Duplicar</button><button data-action="move-option-up" data-index="${i}" type="button">↑</button><button data-action="move-option-down" data-index="${i}" type="button">↓</button><button class="danger-button" data-action="delete-option" data-index="${i}" type="button">Borrar</button></div></div>${open ? renderOpenOption(o,i,event) : ""}</article>`; }
-function renderOpenOption(o, i, event) {
+function renderOptionCard(o, i, showSuccessChance) { const open = developerState.optionOpen === i; return `<article class="developer-option ${open ? "open" : ""}"><div class="developer-option-summary">${open ? renderOptionTitleInput(o, i) : `<button type="button" data-action="open-option" data-index="${i}"><strong>Opción ${i + 1}</strong><small>${summarizeOption(o, showSuccessChance)}</small></button>`}<div><button data-action="duplicate-option" data-index="${i}" type="button">Duplicar</button><button data-action="move-option-up" data-index="${i}" type="button">↑</button><button data-action="move-option-down" data-index="${i}" type="button">↓</button><button class="danger-button" data-action="delete-option" data-index="${i}" type="button">Borrar</button></div></div>${open ? renderOpenOption(o,i,showSuccessChance) : ""}</article>`; }
+function renderOpenOption(o, i, showSuccessChance) {
   return `<div class="developer-form-grid">
     ${textareaInput(`option.resultText:${i}`, "Texto de resultado", o.resultText || "")}
-    ${event?.probabilistic ? `<label class="developer-success-line"${developerTooltipAttributes("option.successChance")}>${labelWithTooltip("% éxito", "option.successChance")}<input type="number" data-field="option.successChance:${i}" value="${escapeHtml(o.successChance ?? 100)}"${developerTooltipAttributes("option.successChance")}></label>` : ""}
+    ${showSuccessChance ? `<label class="developer-success-line"${developerTooltipAttributes("option.successChance")}>${labelWithTooltip("% éxito", "option.successChance")}<input type="number" data-field="option.successChance:${i}" value="${escapeHtml(o.successChance ?? 100)}"${developerTooltipAttributes("option.successChance")}></label>` : ""}
     <details open><summary>Efectos inmediatos</summary>${renderEffectsEditor(o.immediate || {}, `option.immediate:${i}`)}</details>
     <details><summary>Flags</summary>${tagSelector(`option.addTags:${i}`, "Flags añadidos", o.addTags)}</details>
     <details><summary>Consecuencias diferidas</summary>${renderDeferEditor(o.defer, i)}</details>
@@ -249,15 +250,18 @@ function eventsUsingActor(id) { return developerState.events.filter(e=>(e.option
 function eventHasDefer(e) { return (e.options||[]).some(o=>optionList(o.defer).length); }
 function eventHasIssue(e) { return Boolean(e.issue || (e.options||[]).some(o=>o.issues?.length)); }
 function summarizeOption(o) { const effects = Object.entries(o.immediate || {}).map(([k,v]) => `${resourceMeta[k]?.[0] || k} ${Number(v)>0?"↑":"↓"}`).join(" · "); const flags = [o.addTags?.length?"Flags":"", o.characters?.length?"Actores":"", optionList(o.defer).length?"Defer":"", o.outcomes?.length?"Outcomes":""].filter(Boolean).join(" · "); return [effects, flags].filter(Boolean).join(" · ") || "Sin efectos visibles"; }
-function summarizeOption(o) {
+function summarizeOption(o, showSuccessChance = false) {
   const effects = Object.entries(o.immediate || {})
     .map(([k, v]) => `${resourceMeta[k]?.[0] || k} ${Number(v) > 0 ? "↑" : "↓"}`)
     .join(" · ");
 
   const flags = [
     o.addTags?.length ? "Flags" : "",
+    o.characters?.length ? "Actores" : "",
+    o.issues?.length ? "Issues" : "",
     optionList(o.defer).length ? "Defer" : "",
-    o.successChance != null && o.successChance < 100 ? `${o.successChance}% éxito` : ""
+    o.outcomes?.length ? "Outcomes" : "",
+    showSuccessChance && o.successChance != null && o.successChance < 100 ? `${o.successChance}% éxito` : ""
   ].filter(Boolean).join(" · ");
 
   return [effects, flags].filter(Boolean).join(" · ") || "Sin efectos visibles";

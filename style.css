@@ -566,3 +566,10 @@ h2 { margin: 0; }
     margin: 0 0 8px;
   }
 }
+
+.dev-tooltip {
+  cursor: help;
+  color: var(--accent, #d4af37);
+  font-weight: 700;
+  margin-left: 0.25rem;
+}

@@ -587,8 +587,10 @@ h2 { margin: 0; }
   box-shadow: 0 0 0 2px rgba(244, 195, 91, 0.22);
 }
 
-.developer-option-summary { align-items: center; display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr) auto; }
+.developer-option-summary { align-items: start; display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr) auto; }
 .developer-option-summary > button { background: transparent; border: 0; color: var(--text); display: grid; gap: 4px; text-align: left; }
+.developer-option-summary .developer-option-title { margin: 0; }
+.developer-option-title > span:first-child { color: var(--text); font-size: 1rem; }
 .developer-option-summary small, .developer-empty, .developer-reference small { color: var(--muted); }
 .developer-inline, .developer-reference { align-items: end; display: grid; gap: 8px; grid-template-columns: minmax(120px, 1fr) minmax(90px, 0.35fr) auto; margin: 8px 0; }
 .developer-reference { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 10px; }

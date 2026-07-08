@@ -68,7 +68,7 @@ La exportación actual usa esta estructura compatible con GitHub Pages y sin bac
 }
 ```
 
-`event.family` representa la familia principal que consume el motor. `event.families` se conserva como array compatible para familias relacionadas o tipos de issue, sin convertirlo en una entidad editable separada. Las referencias a actores, recursos y eventos diferidos se editan con selectores; el JSON avanzado queda como vía excepcional.
+`event.family` representa la única familia del evento y se edita con un desplegable. Se elimina la capa de subfamilias/familias relacionadas para evitar listas de checkboxes sin mecánica propia. Las referencias a actores, recursos y eventos diferidos se editan con selectores; el JSON avanzado queda como vía excepcional.
 
 ## Cómo publicarlo en GitHub Pages
 

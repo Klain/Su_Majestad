@@ -35,7 +35,6 @@ class EventManager {
     return {
       ...item,
       family: this.normalizeFamily(item.family),
-      families: this.normalizeFamilyList(item.families),
       incompatibleFamilies: this.normalizeFamilyList(item.incompatibleFamilies)
     };
   }
@@ -368,13 +367,14 @@ class EventManager {
   crisisWeightBonus(item, state) {
     const seasonal = (state.news || []).filter((news) => news.type === "seasonal" && news.families?.length && news.remainingDays > 0);
     if (!seasonal.length) return 0;
-    const eventFamilies = new Set([this.normalizeFamily(item.family), ...this.normalizeFamilyList(item.families)].filter(Boolean));
-    return seasonal.reduce((sum, news) => sum + this.normalizeFamilyList(news.families).filter((family) => eventFamilies.has(family)).length * (news.weightBonus || 2.5), 0);
+    const eventFamily = this.normalizeFamily(item.family);
+    if (!eventFamily) return 0;
+    return seasonal.reduce((sum, news) => sum + (this.normalizeFamilyList(news.families).includes(eventFamily) ? (news.weightBonus || 2.5) : 0), 0);
   }
 
   issueWeightBonus(item, state) {
     if (!state.issues?.length) return 0;
-    const familyBonus = state.issues.filter((issue) => this.normalizeFamilyList(item.families).includes(this.normalizeFamily(issue.type)) || this.normalizeFamily(item.family) === this.normalizeFamily(issue.type)).length * 2;
+    const familyBonus = state.issues.filter((issue) => this.normalizeFamily(item.family) === this.normalizeFamily(issue.type)).length * 2;
     const directBonus = item.issue && this.hasMatchingIssue(item.issue, state) ? 5 : 0;
     return familyBonus + directBonus;
   }

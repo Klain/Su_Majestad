@@ -6,7 +6,7 @@ Todas las versiones del proyecto deben usar formato semver y actualizar este arc
 
 ### Cambios realizados
 - Se elimina la entidad editable de subfamilias del Modo desarrollador, incluyendo pestaña, filtro, validación específica y exportación/importación.
-- `events[].families` se mantiene como array auxiliar compatible para familias relacionadas o tipos de issue, pero ya no se presenta como una base de datos independiente.
+- Se elimina también `events[].families` del catálogo y de la ponderación de eventos: cada evento queda con una única `family` editable por desplegable.
 
 ### Compatibilidad
 - Las exportaciones antiguas que incluyan `subfamilies` siguen pudiendo importarse; el editor simplemente ignora esa colección obsoleta.
@@ -22,8 +22,8 @@ Todas las versiones del proyecto deben usar formato semver y actualizar este arc
 - Se actualiza la versión a `v0.8.0`.
 
 ### Compatibilidad
-- `events[].families` se conserva como array compatible y se interpreta como subfamilias/categorías narrativas en el editor, sin cambiar `EventManager` ni el formato de partidas guardadas.
-- La base de datos de subfamilias se infiere inicialmente desde contenido existente para evitar una migración destructiva.
+- En esta versión se probó interpretar `events[].families` como categorías narrativas en el editor; esa vía queda retirada en `v0.8.1` para mantener una única `family` por evento.
+- La base de datos de subfamilias se infirió inicialmente desde contenido existente, pero queda retirada en `v0.8.1`.
 
 ## v0.7.1 - 2026-07-07
 

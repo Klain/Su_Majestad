@@ -160,10 +160,10 @@ La implementación se mantiene deliberadamente pequeña: tres prototipos con bon
 
 Se elimina la capa de subfamilias como entidad propia del modo desarrollador porque todavía no había mecánicas que dependieran de ella. El editor vuelve a centrarse en eventos, familias, actores, datos del juego y validación, reduciendo ruido de mantenimiento.
 
-`events[].families` se conserva como array auxiliar compatible para relaciones narrativas, familias secundarias o tipos de issue que el motor ya pondera, pero sin pestaña, filtro ni validación de una colección separada. Si en el futuro aparece una mecánica real para subfamilias, se recuperará con una migración explícita.
+Se retira también `events[].families` del catálogo y de la ponderación de eventos para que no sobreviva como “familias relacionadas” con otro nombre. Cada evento queda adscrito a una única `family`; si en el futuro aparece una mecánica real para subfamilias, se recuperará con una migración explícita.
 
 ## 2026-07-07 - Modo desarrollador como base de datos visual
 
-Se transforma el modo desarrollador de editor vertical de eventos a una base de datos visual compacta. La decisión de compatibilidad más importante es mantener `events[].families` como el campo serializado existente y tratarlo en la UI como subfamilias o categorías narrativas. Así los eventos antiguos, `EventManager`, las partidas guardadas y las consecuencias diferidas continúan usando los mismos IDs y estructura.
+Se transforma el modo desarrollador de editor vertical de eventos a una base de datos visual compacta. En esta iteración se probó mantener `events[].families` como campo serializado y tratarlo en la UI como categorías narrativas; esa vía quedó retirada el 2026-07-08 para volver a una única `family` por evento.
 
 En ese momento se introdujo una colección editable `subfamilies` como experimento conservador; quedó retirada el 2026-07-08 al confirmarse que no sostenía ninguna mecánica propia.

@@ -11,39 +11,39 @@
   <main class="app" aria-live="polite">
     <section id="menuScreen" class="screen menu-screen">
       <article class="menu-card">
-        <p class="eyebrow">Roguelike de gestión</p>
-        <h1>Su Majestad</h1>
-        <p class="subtitle">Cada reinado es una run de decisiones, memoria y consecuencias.</p>
-        <p class="version-badge" aria-label="Versión actual del juego">Versión <span id="gameVersion">v0.8.0</span></p>
+        <p class="eyebrow" data-i18n="menu.eyebrow">Roguelike de gestión</p>
+        <h1 data-i18n="menu.title">Su Majestad</h1>
+        <p class="subtitle" data-i18n="menu.subtitle">Cada reinado es una run de decisiones, memoria y consecuencias.</p>
+        <p class="version-badge" aria-label="Versión actual del juego" data-i18n-aria="menu.versionAria"><span data-i18n="menu.versionPrefix">Versión</span> <span id="gameVersion">v0.8.0</span></p>
         <div class="menu-actions">
-          <button id="continueButton" class="primary-button" type="button">Continuar reinado</button>
-          <button id="newRunButton" class="secondary-button" type="button">Nuevo reinado</button>
-          <button id="developerModeButton" class="secondary-button" type="button">Modo desarrollador</button>
-          <button id="deleteSaveButton" class="danger-button hidden" type="button">Borrar partida</button>
+          <button id="continueButton" class="primary-button" type="button" data-i18n="menu.continue">Continuar reinado</button>
+          <button id="newRunButton" class="secondary-button" type="button" data-i18n="menu.newRun">Nuevo reinado</button>
+          <button id="developerModeButton" class="secondary-button" type="button" data-i18n="menu.developerMode">Modo desarrollador</button>
+          <button id="deleteSaveButton" class="danger-button hidden" type="button" data-i18n="menu.deleteSave">Borrar partida</button>
         </div>
       </article>
     </section>
 
     <section id="setupScreen" class="screen hidden">
       <article class="setup-card">
-        <p class="eyebrow">Nueva partida</p>
-        <h2>Forja tu monarca</h2>
-        <p>Elige un rasgo inicial, una ambición y la religión del reino. La corte juzgará tu reinado por los tres.</p>
+        <p class="eyebrow" data-i18n="setup.eyebrow">Nueva partida</p>
+        <h2 data-i18n="setup.title">Forja tu monarca</h2>
+        <p data-i18n="setup.intro">Elige un rasgo inicial, una ambición y la religión del reino. La corte juzgará tu reinado por los tres.</p>
         <div class="setup-group">
-          <h3>Rasgo del monarca</h3>
+          <h3 data-i18n="setup.trait">Rasgo del monarca</h3>
           <div id="traitChoices" class="choice-grid"></div>
         </div>
         <div class="setup-group">
-          <h3>Ambición</h3>
+          <h3 data-i18n="setup.ambition">Ambición</h3>
           <div id="ambitionChoices" class="choice-grid"></div>
         </div>
         <div class="setup-group">
-          <h3>Religión del reino</h3>
+          <h3 data-i18n="setup.religion">Religión del reino</h3>
           <div id="religionChoices" class="choice-grid"></div>
         </div>
         <div class="setup-actions">
-          <button id="startRunButton" class="primary-button" type="button" disabled>Comenzar reinado</button>
-          <button id="setupBackButton" class="secondary-button" type="button">Volver al menú</button>
+          <button id="startRunButton" class="primary-button" type="button" disabled data-i18n="setup.start">Comenzar reinado</button>
+          <button id="setupBackButton" class="secondary-button" type="button" data-i18n="setup.back">Volver al menú</button>
         </div>
       </article>
     </section>
@@ -51,24 +51,24 @@
     <section id="gameScreen" class="screen hidden">
       <header class="hero">
         <div>
-          <p class="eyebrow">Roguelike de gestión</p>
-          <h1>Su Majestad</h1>
-          <p class="version-badge" aria-label="Versión actual del juego">Versión <span id="gameVersionGame">v0.8.0</span></p>
+          <p class="eyebrow" data-i18n="game.eyebrow">Roguelike de gestión</p>
+          <h1 data-i18n="game.title">Su Majestad</h1>
+          <p class="version-badge" aria-label="Versión actual del juego" data-i18n-aria="game.versionAria"><span data-i18n="game.versionPrefix">Versión</span> <span id="gameVersionGame">v0.8.0</span></p>
         </div>
-        <button id="menuButton" class="secondary-button" type="button">Menú</button>
+        <button id="menuButton" class="secondary-button" type="button" data-i18n="game.menu">Menú</button>
       </header>
-      <section class="status-card"><div class="day-panel"><span>Día</span><strong id="dayNumber">1</strong><small>de 30</small></div><div class="progress-shell" aria-label="Progreso de la campaña"><div id="dayProgress" class="progress-bar"></div></div></section>
-      <section id="resources" class="resources-grid" aria-label="Recursos del reino"></section>
-      <section id="reign" class="reign-card" aria-label="Reinado actual"></section>
-      <section id="traitEvolution" class="trait-evolution hidden" aria-label="Evolución del rasgo"></section>
-      <section id="edictOffer" class="edict-offer hidden" aria-label="Oferta de edictos"></section>
+      <section class="status-card"><div class="day-panel"><span data-i18n="game.day">Día</span><strong id="dayNumber">1</strong><small data-i18n="game.campaignLength">de 30</small></div><div class="progress-shell" aria-label="Progreso de la campaña" data-i18n-aria="game.progressAria"><div id="dayProgress" class="progress-bar"></div></div></section>
+      <section id="resources" class="resources-grid" aria-label="Recursos del reino" data-i18n-aria="game.resourcesAria"></section>
+      <section id="reign" class="reign-card" aria-label="Reinado actual" data-i18n-aria="game.reignAria"></section>
+      <section id="traitEvolution" class="trait-evolution hidden" aria-label="Evolución del rasgo" data-i18n-aria="game.traitEvolutionAria"></section>
+      <section id="edictOffer" class="edict-offer hidden" aria-label="Oferta de edictos" data-i18n-aria="game.edictOfferAria"></section>
       <section id="message" class="message hidden"></section>
-      <section id="news" class="news-card" aria-label="Noticias del reino"></section>
-      <section id="memory" class="memory-card" aria-label="Memoria del reino"></section>
-      <section id="issues" class="issues-card" aria-label="Crisis abiertas del reino"></section>
-      <section class="events-header"><h2>Consejo del día</h2><p>Resuelve los 2 asuntos antes de cerrar la jornada.</p></section>
+      <section id="news" class="news-card" aria-label="Noticias del reino" data-i18n-aria="game.newsAria"></section>
+      <section id="memory" class="memory-card" aria-label="Memoria del reino" data-i18n-aria="game.memoryAria"></section>
+      <section id="issues" class="issues-card" aria-label="Crisis abiertas del reino" data-i18n-aria="game.issuesAria"></section>
+      <section class="events-header"><h2 data-i18n="game.councilTitle">Consejo del día</h2><p data-i18n="game.councilSubtitle">Resuelve los 2 asuntos antes de cerrar la jornada.</p></section>
       <section id="events" class="events-list"></section>
-      <section class="actions"><button id="endDayButton" class="primary-button" type="button" disabled>Terminar día</button></section>
+      <section class="actions"><button id="endDayButton" class="primary-button" type="button" disabled data-i18n="game.endDay">Terminar día</button></section>
     </section>
 
     <section id="developerScreen" class="screen hidden">
@@ -80,12 +80,12 @@
             <p>Editor compacto inspirado en RPG Maker MV: eventos, familias y actores se editan en memoria, con exportación versionada y borrador local.</p>
           </div>
           <div class="developer-global-actions">
-            <button id="developerBackButton" class="secondary-button" type="button">Volver al menú</button>
-            <button id="developerExportButton" class="secondary-button" type="button">Exportar base de datos</button>
-            <label class="file-button">Importar base de datos<input id="developerImportInput" type="file" accept="application/json,.json"></label>
-            <button id="developerDraftButton" class="secondary-button" type="button">Guardar borrador</button>
-            <button id="developerLoadDraftButton" class="secondary-button" type="button">Cargar borrador</button>
-            <button id="developerValidateButton" class="primary-button" type="button">Validar todo</button>
+            <button id="developerBackButton" class="secondary-button" type="button" data-i18n="developer.back">Volver al menú</button>
+            <button id="developerExportButton" class="secondary-button" type="button" data-i18n="developer.export">Exportar base de datos</button>
+            <label class="file-button"><span data-i18n="developer.import">Importar base de datos</span><input id="developerImportInput" type="file" accept="application/json,.json"></label>
+            <button id="developerDraftButton" class="secondary-button" type="button" data-i18n="developer.draft">Guardar borrador</button>
+            <button id="developerLoadDraftButton" class="secondary-button" type="button" data-i18n="developer.loadDraft">Cargar borrador</button>
+            <button id="developerValidateButton" class="primary-button" type="button" data-i18n="developer.validate">Validar todo</button>
           </div>
         </header>
         <div id="developerRoot"></div>
@@ -97,6 +97,7 @@
     </section>
   </main>
 
+  <script src="i18n.js"></script>
   <script src="events.js"></script>
   <script src="data/actors.js"></script>
   <script src="data/actors-pack-01.js"></script>

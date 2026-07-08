@@ -2,6 +2,15 @@
 
 Todas las versiones del proyecto deben usar formato semver y actualizar este archivo cuando haya cambios importantes.
 
+## v0.8.1 - 2026-07-08
+
+### Cambios realizados
+- Se elimina la entidad editable de subfamilias del Modo desarrollador, incluyendo pestaña, filtro, validación específica y exportación/importación.
+- `events[].families` se mantiene como array auxiliar compatible para familias relacionadas o tipos de issue, pero ya no se presenta como una base de datos independiente.
+
+### Compatibilidad
+- Las exportaciones antiguas que incluyan `subfamilies` siguen pudiendo importarse; el editor simplemente ignora esa colección obsoleta.
+
 ## v0.8.0 - 2026-07-07
 
 ### Cambios realizados

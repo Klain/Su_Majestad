@@ -382,7 +382,7 @@ Ambos campos funcionan con cualquier atributo presente en `state.resources`, inc
 
 ## Modo desarrollador como base de datos visual
 
-Desde `v0.8.0`, `developerScreen` funciona como una base de datos visual estática del contenido del juego. `dev-editor.js` clona en memoria los catálogos cargados (`eventsDatabase`/`events`, `families` y `actors`) y crea una colección editable de `subfamilies` inferida desde `events[].families` y tags comunes de familias cuando todavía no hay una fuente persistente dedicada.
+Desde `v0.8.0`, `developerScreen` funciona como una base de datos visual estática del contenido del juego. `dev-editor.js` clona en memoria los catálogos cargados (`eventsDatabase`/`events`, `families` y `actors`) para editarlos sin backend ni escritura directa de archivos.
 
 La exportación del editor usa una estructura versionada:
 
@@ -391,13 +391,12 @@ La exportación del editor usa una estructura versionada:
   "schemaVersion": 1,
   "events": [],
   "families": [],
-  "subfamilies": [],
   "actors": []
 }
 ```
 
 La importación acepta tanto esta estructura como el array histórico de eventos para mantener compatibilidad con exportaciones anteriores. El borrador local usa `localStorage` bajo `su-majestad-dev-database-draft-v1`. Como el proyecto sigue siendo compatible con GitHub Pages, el editor no escribe archivos ni necesita backend.
 
-La diferencia de datos es deliberadamente conservadora: `event.family` sigue siendo la familia principal consumida por el motor, mientras que `event.families` se presenta como subfamilias o categorías narrativas. El `EventManager` no necesita cambios porque esas categorías ya existían como array auxiliar y el editor solo añade una capa visual para seleccionarlas, validarlas y exportarlas.
+La diferencia de datos es deliberadamente conservadora: `event.family` sigue siendo la familia principal consumida por el motor, mientras que `event.families` se conserva como array auxiliar para familias relacionadas o tipos de issue. No hay una entidad editable separada para subfamilias; si más adelante aparece una mecánica propia, se podrá recuperar con una migración explícita.
 
-La validación global del editor clasifica problemas en errores y avisos navegables. Revisa IDs duplicados, campos obligatorios, referencias a familias/subfamilias/actores/eventos, recursos inválidos, probabilidades, ramas diferidas, registros sin uso y tags de uso único. Cada problema conserva el tipo de pestaña y el ID del registro para poder saltar directamente al dato afectado.
+La validación global del editor clasifica problemas en errores y avisos navegables. Revisa IDs duplicados, campos obligatorios, referencias a familias/actores/eventos, recursos inválidos, probabilidades, ramas diferidas, registros sin uso y tags de uso único. Cada problema conserva el tipo de pestaña y el ID del registro para poder saltar directamente al dato afectado.

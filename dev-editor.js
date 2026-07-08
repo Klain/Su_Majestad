@@ -103,7 +103,7 @@ function renderOptionTitleInput(o, i) {
 }
 function renderOptionCard(o, i, event) { const open = developerState.optionOpen === i; return `<article class="developer-option ${open ? "open" : ""}"><div class="developer-option-summary">${open ? renderOptionTitleInput(o, i) : `<button type="button" data-action="open-option" data-index="${i}"><strong>Opción ${i + 1}</strong><small>${summarizeOption(o)}</small></button>`}<div><button data-action="duplicate-option" data-index="${i}" type="button">Duplicar</button><button data-action="move-option-up" data-index="${i}" type="button">↑</button><button data-action="move-option-down" data-index="${i}" type="button">↓</button><button class="danger-button" data-action="delete-option" data-index="${i}" type="button">Borrar</button></div></div>${open ? renderOpenOption(o,i,event) : ""}</article>`; }
 function renderOpenOption(o, i, event) {
-  return `<div class="developer-form-grid">
+  return `<div class="developer-form-grid developer-option-flow">
     ${textareaInput(`option.resultText:${i}`, "Texto de resultado", o.resultText || "")}
     ${event?.probabilistic ? `<label class="developer-success-line"${developerTooltipAttributes("option.successChance")}>${labelWithTooltip("% éxito", "option.successChance")}<input type="number" data-field="option.successChance:${i}" value="${escapeHtml(o.successChance ?? 100)}"${developerTooltipAttributes("option.successChance")}></label>` : ""}
     <details open><summary>Efectos inmediatos</summary>${renderEffectsEditor(o.immediate || {}, `option.immediate:${i}`)}</details>

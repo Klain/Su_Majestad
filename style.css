@@ -485,6 +485,7 @@ h2 { margin: 0; }
 .developer-list-item span, .developer-list-item small { color: var(--muted); }
 .developer-editor { min-width: 0; }
 .developer-form-grid { display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.developer-form-grid.developer-option-flow { grid-template-columns: 1fr; }
 .developer-form-grid label, .developer-option label { color: var(--muted); display: grid; font-size: 0.8rem; font-weight: 800; gap: 5px; }
 .developer-form-grid .wide { grid-column: 1 / -1; }
 .developer-form-grid textarea { min-height: 96px; }
@@ -525,6 +526,7 @@ h2 { margin: 0; }
   background: #130e1a; border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; color: var(--text); font: inherit; min-height: 34px; padding: 7px 8px; width: 100%;
 }
 .developer-form-grid details { background: rgba(59,42,79,0.32); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; grid-column: span 1; padding: 10px; }
+.developer-option-flow details { grid-column: 1 / -1; }
 .developer-form-grid summary { color: var(--gold); cursor: pointer; font-weight: 900; }
 .dev-chip-box { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; max-height: 140px; overflow: auto; }
 .dev-chip { align-items: center; background: rgba(244,195,91,0.1); border: 1px solid rgba(244,195,91,0.2); border-radius: 999px; display: inline-flex !important; font-size: 0.78rem !important; gap: 4px !important; padding: 5px 8px; }

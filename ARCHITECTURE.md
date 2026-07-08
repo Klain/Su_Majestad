@@ -68,7 +68,7 @@ El editor soporta:
 1. Lista de eventos con selección.
 2. Búsqueda por ID, título, texto, familias, tags y opciones.
 3. Filtros por `family`, `kind`, eventos normales/consecuencias, eventos con `issue` y eventos con `defer`.
-4. Formulario visual para campos frecuentes (`id`, `title`, `text`, `kind`, `family`, `families`, peso, días, tags, `issue` y campos principales de opciones).
+4. Formulario visual para campos frecuentes (`id`, `title`, `text`, `kind`, `family`, peso, días, tags, `issue` y campos principales de opciones).
 5. Vista **JSON avanzado** para reemplazar el objeto completo del evento seleccionado cuando el formulario visual no cubre una estructura compleja.
 6. Exportación del catálogo completo como JSON descargable.
 7. Importación de un array JSON de eventos.
@@ -90,7 +90,7 @@ registerEvents([
       ["Enviar cubas reales", { gold: -4, people: 3 }, { family: "merchants" }],
       ["Dejar que se organicen", { people: -2, threat: 2 }]
     ],
-    { family: "merchants", families: ["merchants", "people"], weight: 1 }
+    { family: "merchants", weight: 1 }
   )
 ]);
 ```
@@ -99,7 +99,7 @@ Reglas prácticas:
 
 1. Usa un `id` único y estable; puede aparecer en partidas guardadas o consecuencias pendientes.
 2. Comprueba que cada recurso existe en `resourceMeta` de `game.js`.
-3. Usa `family` para la familia principal y `families` si el evento también encaja con otras familias o tipos de issue.
+3. Usa `family` como única familia del evento. No añadas subfamilias ni listas de familias relacionadas.
 4. Evita efectos extremos salvo que el riesgo narrativo lo justifique.
 
 ## Cómo crear un evento de consecuencia
@@ -205,17 +205,15 @@ Si el actor no se ha recordado todavía, la interpolación usa un texto genéric
 
 Las familias viven en `data/families.js`. Vincula eventos con:
 
-- `family`: familia principal, usada por historial y penalización de repetición reciente.
-- `families`: lista de familias o tipos de issue relacionados, usada para dar peso extra si hay issues activos compatibles.
+- `family`: única familia del evento, usada por historial, penalización de repetición reciente y ponderación contextual.
 
 ```js
 event("border_refugees", "Refugiados en la frontera", "...", options, {
-  family: "diplomat",
-  families: ["diplomat"]
+  family: "diplomat"
 })
 ```
 
-Usa IDs de `data/families.js` para contenido nuevo salvo que estés modelando un tipo de issue específico ya existente. El catálogo actual de familias es: `merchants`, `artisans`, `chancellor`, `clergy`, `army`, `nobility`, `people`, `spy`, `diplomat`, `steward`, `seneschal`, `apothecary`, `scholar` y `jester`. El motor conserva alias heredados para contenido o partidas antiguas, pero no deben usarse como IDs nuevos.
+Usa IDs de `data/families.js` para contenido nuevo. El catálogo actual de familias es: `merchants`, `artisans`, `chancellor`, `clergy`, `army`, `nobility`, `people`, `spy`, `diplomat`, `steward`, `seneschal`, `apothecary`, `scholar` y `jester`. El motor conserva alias heredados para contenido o partidas antiguas, pero no deben usarse como IDs nuevos.
 
 ## Cómo crear un issue
 
@@ -382,7 +380,7 @@ Ambos campos funcionan con cualquier atributo presente en `state.resources`, inc
 
 ## Modo desarrollador como base de datos visual
 
-Desde `v0.8.0`, `developerScreen` funciona como una base de datos visual estática del contenido del juego. `dev-editor.js` clona en memoria los catálogos cargados (`eventsDatabase`/`events`, `families` y `actors`) y crea una colección editable de `subfamilies` inferida desde `events[].families` y tags comunes de familias cuando todavía no hay una fuente persistente dedicada.
+Desde `v0.8.0`, `developerScreen` funciona como una base de datos visual estática del contenido del juego. `dev-editor.js` clona en memoria los catálogos cargados (`eventsDatabase`/`events`, `families` y `actors`) para editarlos sin backend ni escritura directa de archivos.
 
 La exportación del editor usa una estructura versionada:
 
@@ -391,13 +389,12 @@ La exportación del editor usa una estructura versionada:
   "schemaVersion": 1,
   "events": [],
   "families": [],
-  "subfamilies": [],
   "actors": []
 }
 ```
 
 La importación acepta tanto esta estructura como el array histórico de eventos para mantener compatibilidad con exportaciones anteriores. El borrador local usa `localStorage` bajo `su-majestad-dev-database-draft-v1`. Como el proyecto sigue siendo compatible con GitHub Pages, el editor no escribe archivos ni necesita backend.
 
-La diferencia de datos es deliberadamente conservadora: `event.family` sigue siendo la familia principal consumida por el motor, mientras que `event.families` se presenta como subfamilias o categorías narrativas. El `EventManager` no necesita cambios porque esas categorías ya existían como array auxiliar y el editor solo añade una capa visual para seleccionarlas, validarlas y exportarlas.
+La diferencia de datos es deliberadamente simple: `event.family` es la única familia consumida por el motor y editada en el formulario visual. Se eliminan subfamilias y listas de familias relacionadas; si más adelante aparece una mecánica propia, se podrá recuperar con una migración explícita.
 
-La validación global del editor clasifica problemas en errores y avisos navegables. Revisa IDs duplicados, campos obligatorios, referencias a familias/subfamilias/actores/eventos, recursos inválidos, probabilidades, ramas diferidas, registros sin uso y tags de uso único. Cada problema conserva el tipo de pestaña y el ID del registro para poder saltar directamente al dato afectado.
+La validación global del editor clasifica problemas en errores y avisos navegables. Revisa IDs duplicados, campos obligatorios, referencias a familias/actores/eventos, recursos inválidos, probabilidades, ramas diferidas, registros sin uso y tags de uso único. Cada problema conserva el tipo de pestaña y el ID del registro para poder saltar directamente al dato afectado.

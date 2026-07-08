@@ -156,8 +156,14 @@ La creación del reinado suma un tercer eje de identidad: la religión del reino
 
 La implementación se mantiene deliberadamente pequeña: tres prototipos con bonos iniciales y referencias de diseño para evolución o ruptura futuras. No se añaden crisis religiosas ni packs de eventos, porque el objetivo de esta tarea es preparar el estado, la UI y la compatibilidad de guardado antes de construir contenido sistémico encima.
 
+## 2026-07-08 - Retirada de subfamilias editables
+
+Se elimina la capa de subfamilias como entidad propia del modo desarrollador porque todavía no había mecánicas que dependieran de ella. El editor vuelve a centrarse en eventos, familias, actores, datos del juego y validación, reduciendo ruido de mantenimiento.
+
+`events[].families` se conserva como array auxiliar compatible para relaciones narrativas, familias secundarias o tipos de issue que el motor ya pondera, pero sin pestaña, filtro ni validación de una colección separada. Si en el futuro aparece una mecánica real para subfamilias, se recuperará con una migración explícita.
+
 ## 2026-07-07 - Modo desarrollador como base de datos visual
 
 Se transforma el modo desarrollador de editor vertical de eventos a una base de datos visual compacta. La decisión de compatibilidad más importante es mantener `events[].families` como el campo serializado existente y tratarlo en la UI como subfamilias o categorías narrativas. Así los eventos antiguos, `EventManager`, las partidas guardadas y las consecuencias diferidas continúan usando los mismos IDs y estructura.
 
-La nueva colección editable `subfamilies` se exporta junto con eventos, familias y actores en una estructura versionada, pero se infiere inicialmente desde el catálogo cargado cuando no existe un archivo dedicado. Esta migración conservadora mejora la creación de contenido sin exigir reescribir el motor ni convertir todo el proyecto a JSON de golpe.
+En ese momento se introdujo una colección editable `subfamilies` como experimento conservador; quedó retirada el 2026-07-08 al confirmarse que no sostenía ninguna mecánica propia.
